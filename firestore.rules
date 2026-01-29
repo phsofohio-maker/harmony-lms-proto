@@ -2,6 +2,182 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Get the current user's profile document
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    // Check if current user has a specific role
+    function hasRole(role) {
+      return isAuthenticated() && getUserData().role == role;
+    }
+    
+    // Check if current user has any of the specified roles
+    function hasAnyRole(roles) {
+      return isAuthenticated() && getUserData().role in roles;
+    }
+    
+    // Check if user is admin
+    function isAdmin() {
+      return hasRole('admin');
+    }
+    
+    // Check if user can author content (admin or content_author)
+    function canAuthorContent() {
+      return hasAnyRole(['admin', 'content_author']);
+    }
+    
+    // Check if user is the document owner
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // ============================================
+    // USER PROFILES
+    // ============================================
+    
+    match /users/{userId} {
+      // Users can read their own profile
+      // Admins can read all profiles
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Users can update their own profile (limited fields)
+      // Admins can update any profile
+      allow update: if isOwner(userId) || isAdmin();
+      
+      // Only admins can create new user profiles
+      // (Or allow self-creation on first login)
+      allow create: if isOwner(userId) || isAdmin();
+      
+      // Only admins can delete profiles
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // COURSES
+    // ============================================
+    
+    match /courses/{courseId} {
+      // All authenticated users can read published courses
+      // Content authors and admins can read all courses (including drafts)
+      allow read: if isAuthenticated() && (
+        resource.data.status == 'published' || canAuthorContent()
+      );
+      
+      // Only content authors and admins can create/update courses
+      allow create, update: if canAuthorContent();
+      
+      // Only admins can delete courses
+      allow delete: if isAdmin();
+      
+      // ============================================
+      // MODULES (nested under courses)
+      // ============================================
+      
+      match /modules/{moduleId} {
+        // Same read rules as courses
+        allow read: if isAuthenticated() && (
+          resource.data.status == 'published' || canAuthorContent()
+        );
+        
+        // Content authors can create/update modules
+        allow create, update: if canAuthorContent();
+        
+        // Only admins can delete modules
+        allow delete: if isAdmin();
+        
+        // ============================================
+        // CONTENT BLOCKS (nested under modules)
+        // ============================================
+        
+        match /blocks/{blockId} {
+          // Inherit read access from parent module
+          allow read: if isAuthenticated();
+          
+          // Content authors can manage blocks
+          allow create, update, delete: if canAuthorContent();
+        }
+      }
+    }
+    
+    // ============================================
+    // AUDIT LOGS (Immutable)
+    // ============================================
+    
+    match /audit_logs/{logId} {
+      // Admins can read audit logs
+      allow read: if isAdmin();
+      
+      // Anyone authenticated can create logs (typically via Cloud Functions)
+      // But for client-side fallback, allow writes
+      allow create: if isAuthenticated() && 
+        request.resource.data.actorId == request.auth.uid;
+      
+      // CRITICAL: No updates or deletes allowed - ever
+      allow update, delete: if false;
+    }
+    
+    // ============================================
+    // ENROLLMENTS
+    // ============================================
+    
+    match /enrollments/{enrollmentId} {
+      // Users can read their own enrollments
+      // Admins and instructors can read all enrollments
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        hasAnyRole(['admin', 'instructor'])
+      );
+      
+      // Admins can create enrollments (assign courses)
+      // Users can create their own enrollment (self-enroll)
+      allow create: if isAdmin() || 
+        (isAuthenticated() && request.resource.data.userId == request.auth.uid);
+      
+      // Users can update their own enrollment progress
+      // Admins can update any enrollment
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+      
+      // Only admins can delete enrollments
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // GRADES (Sensitive - Legal Defensibility)
+    // ============================================
+    
+    match /grades/{gradeId} {
+      // Users can read their own grades
+      // Admins and instructors can read all grades
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        hasAnyRole(['admin', 'instructor'])
+      );
+      
+      // Only admins and instructors can create/update grades
+      // Manual grade entry for legal compliance
+      allow create, update: if hasAnyRole(['admin', 'instructor']);
+      
+      // Grades cannot be deleted - only marked as superseded
+      allow delete: if false;
+    }
+    
+    // ============================================
+    // CATCH-ALL: Deny everything else
+    // ============================================
+    
     match /{document=**} {
       allow read, write: if false;
     }

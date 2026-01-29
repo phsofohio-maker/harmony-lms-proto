@@ -1,4 +1,7 @@
-// User Roles
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
 export type UserRoleType = 'admin' | 'instructor' | 'staff' | 'content_author';
 
 export interface User {
@@ -7,52 +10,77 @@ export interface User {
   email: string;
   role: UserRoleType;
   department?: string;
+  licenseNumber?: string;
+  licenseExpiry?: string;
 }
 
-// Content Block Types
-export type BlockType = 
+// ============================================
+// CONTENT BLOCKS
+// ============================================
+
+export type BlockType =
   | 'heading'
   | 'text'
   | 'image'
   | 'video'
   | 'quiz'
-  | 'checklist';
+  | 'checklist'
+  | 'drag_drop'
+  | 'flashcard';
 
-// Specific Data Interfaces
 export interface TextBlockData {
   content: string;
   variant?: 'paragraph' | 'callout-info' | 'callout-warning' | 'callout-critical';
 }
 
+export interface HeadingBlockData {
+  content: string;
+  level?: 1 | 2 | 3;
+}
+
 export interface ImageBlockData {
   url: string;
   caption?: string;
-  altText?: string; // Critical for accessibility compliance
+  altText?: string;
 }
 
 export interface VideoBlockData {
   url: string;
   title: string;
   duration: number; // seconds
-  transcript?: string; // Critical for accessibility compliance
+  transcript?: string;
 }
 
 export interface QuizQuestion {
   id: string;
   question: string;
   options: string[];
-  correctAnswer: number; // index of correct option
+  correctAnswer: number;
   points: number;
+  explanation?: string;
 }
 
 export interface QuizBlockData {
   title: string;
   questions: QuizQuestion[];
   passingScore: number;
+  maxAttempts?: number;
+}
+
+export interface ChecklistBlockData {
+  title: string;
+  items: { id: string; label: string; required: boolean }[];
 }
 
 // Union type for all block data
-export type AnyBlockData = TextBlockData | ImageBlockData | VideoBlockData | QuizBlockData | { [key: string]: any };
+export type AnyBlockData =
+  | TextBlockData
+  | HeadingBlockData
+  | ImageBlockData
+  | VideoBlockData
+  | QuizBlockData
+  | ChecklistBlockData
+  | Record<string, any>;
 
 export interface ContentBlock {
   id: string;
@@ -63,43 +91,104 @@ export interface ContentBlock {
   data: AnyBlockData;
 }
 
-// Course & Module Hierarchy
+// ============================================
+// COURSE & MODULE HIERARCHY
+// ============================================
+
+export type CourseStatus = 'draft' | 'published' | 'archived';
+export type ModuleStatus = 'draft' | 'published' | 'archived';
+export type CourseCategory = 'hospice' | 'compliance' | 'clinical_skills' | 'onboarding';
+
 export interface Module {
   id: string;
   courseId: string;
   title: string;
   description: string;
-  status: 'draft' | 'published' | 'archived';
+  status: ModuleStatus;
   passingScore: number;
   estimatedMinutes: number;
-  blocks: ContentBlock[]; 
+  order?: number;
+  blocks: ContentBlock[];
 }
 
 export interface Course {
   id: string;
   title: string;
   description: string;
-  category: 'hospice' | 'compliance' | 'clinical_skills';
+  category: CourseCategory;
   ceCredits: number;
   thumbnailUrl: string;
+  status?: CourseStatus;
   modules: Module[];
 }
 
-// Audit & Compliance
+// ============================================
+// AUDIT & COMPLIANCE
+// ============================================
+
+export type AuditActionType =
+  | 'USER_LOGIN'
+  | 'USER_LOGOUT'
+  | 'COURSE_CREATE'
+  | 'COURSE_UPDATE'
+  | 'COURSE_DELETE'
+  | 'COURSE_PUBLISH'
+  | 'MODULE_CREATE'
+  | 'MODULE_UPDATE'
+  | 'MODULE_DELETE'
+  | 'BLOCK_CREATE'
+  | 'BLOCK_UPDATE'
+  | 'BLOCK_DELETE'
+  | 'GRADE_ENTRY'
+  | 'GRADE_CHANGE'
+  | 'ENROLLMENT_CREATE'
+  | 'ENROLLMENT_UPDATE'
+  | 'ASSESSMENT_SUBMIT'
+  | 'ASSESSMENT_GRADE';
+
 export interface AuditLog {
   id: string;
   timestamp: string;
   actorId: string;
   actorName: string;
-  actionType: 'GRADE_ENTRY' | 'MODULE_UPDATE' | 'COURSE_PUBLISH' | 'USER_LOGIN';
+  actionType: AuditActionType;
   targetId: string;
   details: string;
+  metadata?: Record<string, any>;
 }
+
+// ============================================
+// ENROLLMENT & PROGRESS
+// ============================================
+
+export type EnrollmentStatus = 'not_started' | 'in_progress' | 'completed' | 'failed';
+export type CompetencyLevel = 'not_competent' | 'developing' | 'competent' | 'mastery';
 
 export interface Enrollment {
   id: string;
   userId: string;
   courseId: string;
   progress: number; // 0-100
-  status: 'not_started' | 'in_progress' | 'completed';
+  status: EnrollmentStatus;
+  enrolledAt?: string;
+  completedAt?: string;
+}
+
+export interface ModuleProgress {
+  moduleId: string;
+  completed: boolean;
+  score?: number;
+  attempts: number;
+  lastAttemptAt?: string;
+}
+
+export interface Grade {
+  id: string;
+  userId: string;
+  moduleId: string;
+  score: number;
+  passed: boolean;
+  gradedBy: string; // UID of grader (manual entry)
+  gradedAt: string;
+  notes?: string;
 }

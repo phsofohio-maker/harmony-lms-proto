@@ -1,86 +1,226 @@
+/**
+ * Dashboard Page
+ * 
+ * Main landing page showing compliance overview and assigned courses.
+ * Now fetches real data from Firestore.
+ * 
+ * @module pages/Dashboard
+ */
+
 import React from 'react';
-import { User, Course } from '../types';
-import { MOCK_COURSES } from '../services/mockData';
-import { Clock, CheckCircle, AlertTriangle, PlayCircle, Award } from 'lucide-react';
+import { User } from '../types';
+import { useCourses } from '../hooks/useCourses';
+import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
+import {
+  Clock,
+  AlertTriangle,
+  PlayCircle,
+  Award,
+  Loader2,
+  AlertCircle,
+  BookOpen,
+  Plus,
+  RefreshCw,
+} from 'lucide-react';
+import { cn } from '../utils';
 
 interface DashboardProps {
   user: User;
-  onNavigate: (path: string) => void;
+  onNavigate: (path: string, context?: Record<string, any>) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate }) => {
+  const { hasRole } = useAuth();
+  const { courses, isLoading, error, refetch } = useCourses();
+
+  const canAuthor = hasRole(['admin', 'content_author']);
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Welcome back, {user.displayName}</h1>
-        <p className="text-slate-500 mt-2">Here is your compliance overview for {new Date().toLocaleDateString()}</p>
+      {/* Header */}
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">
+            Welcome back, {user.displayName}
+          </h1>
+          <p className="text-slate-500 mt-2">
+            Here is your compliance overview for {new Date().toLocaleDateString()}
+          </p>
+        </div>
+        {canAuthor && (
+          <Button onClick={() => onNavigate('/builder')}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Module
+          </Button>
+        )}
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                <Clock className="h-6 w-6" />
-            </div>
-            <div>
-                <p className="text-sm text-slate-500 font-medium">Pending Courses</p>
-                <p className="text-2xl font-bold text-slate-900">2</p>
-            </div>
+          <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+            <Clock className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm text-slate-500 font-medium">Pending Courses</p>
+            <p className="text-2xl font-bold text-slate-900">
+              {isLoading ? '—' : courses.filter((c) => c.status !== 'archived').length}
+            </p>
+          </div>
         </div>
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center text-green-600">
-                <Award className="h-6 w-6" />
-            </div>
-            <div>
-                <p className="text-sm text-slate-500 font-medium">CE Credits Earned</p>
-                <p className="text-2xl font-bold text-slate-900">12.5</p>
-            </div>
+          <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+            <Award className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm text-slate-500 font-medium">CE Credits Earned</p>
+            <p className="text-2xl font-bold text-slate-900">0.0</p>
+          </div>
         </div>
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
-                <AlertTriangle className="h-6 w-6" />
-            </div>
-            <div>
-                <p className="text-sm text-slate-500 font-medium">Compliance Alerts</p>
-                <p className="text-2xl font-bold text-slate-900">0</p>
-            </div>
+          <div className="h-12 w-12 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
+            <AlertTriangle className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm text-slate-500 font-medium">Compliance Alerts</p>
+            <p className="text-2xl font-bold text-slate-900">0</p>
+          </div>
         </div>
       </div>
 
-      {/* Course List */}
+      {/* Course List Section */}
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-slate-800">Assigned Training</h2>
-            <Button variant="ghost" size="sm" onClick={() => onNavigate('/courses')}>View All</Button>
+          <h2 className="text-xl font-bold text-slate-800">
+            {canAuthor ? 'All Courses' : 'Assigned Training'}
+          </h2>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={refetch}
+              disabled={isLoading}
+            >
+              <RefreshCw className={cn('h-4 w-4 mr-1', isLoading && 'animate-spin')} />
+              Refresh
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onNavigate('/courses')}>
+              View All
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {MOCK_COURSES.map(course => (
-                <div key={course.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
-                    <div className="h-32 bg-slate-200 relative">
-                        <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover" />
-                        <div className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-bold text-slate-700 uppercase">
-                            {course.category}
-                        </div>
-                    </div>
-                    <div className="p-5 flex-1 flex flex-col">
-                        <h3 className="font-bold text-lg text-slate-900 mb-2">{course.title}</h3>
-                        <p className="text-sm text-slate-500 mb-4 flex-1">{course.description}</p>
-                        
-                        <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
-                             <div className="flex items-center gap-1 text-xs text-slate-500">
-                                <Award className="h-3 w-3" />
-                                <span>{course.ceCredits} CE Units</span>
-                             </div>
-                             <Button size="sm" onClick={() => onNavigate(`/courses/${course.id}`)}>
-                                Start Module
-                             </Button>
-                        </div>
-                    </div>
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-red-800">Failed to load courses</p>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-xl border border-slate-200 h-64 animate-pulse"
+              >
+                <div className="h-32 bg-slate-100" />
+                <div className="p-4 space-y-3">
+                  <div className="h-4 bg-slate-100 rounded w-3/4" />
+                  <div className="h-3 bg-slate-100 rounded w-full" />
+                  <div className="h-3 bg-slate-100 rounded w-1/2" />
                 </div>
+              </div>
             ))}
-        </div>
+          </div>
+        ) : courses.length === 0 ? (
+          /* Empty State */
+          <div className="bg-white rounded-xl border-2 border-dashed border-slate-200 p-12 text-center">
+            <BookOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500 font-medium mb-2">No courses available</p>
+            <p className="text-sm text-slate-400 mb-6">
+              {canAuthor
+                ? 'Create your first course to get started'
+                : 'Courses will appear here when assigned'}
+            </p>
+            {canAuthor && (
+              <Button onClick={() => onNavigate('/builder')}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Course
+              </Button>
+            )}
+          </div>
+        ) : (
+          /* Course Cards */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {courses.map((course) => (
+              <div
+                key={course.id}
+                className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-all group"
+              >
+                {/* Thumbnail */}
+                <div className="h-32 bg-gradient-to-br from-brand-500 to-brand-700 relative">
+                  {course.thumbnailUrl && (
+                    <img
+                      src={course.thumbnailUrl}
+                      alt={course.title}
+                      className="w-full h-full object-cover opacity-80"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/20 backdrop-blur-sm border border-white/30 text-white">
+                      {course.category}
+                    </span>
+                    {course.status === 'draft' && (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/80 text-white">
+                        Draft
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-4">
+                  <h3 className="font-bold text-slate-900 mb-1 line-clamp-1">
+                    {course.title}
+                  </h3>
+                  <p className="text-sm text-slate-500 mb-4 line-clamp-2 min-h-[40px]">
+                    {course.description || 'No description'}
+                  </p>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-xs text-slate-400">
+                      <span className="flex items-center gap-1">
+                        <BookOpen className="h-3 w-3" />
+                        {course.modules?.length || 0} modules
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Award className="h-3 w-3" />
+                        {course.ceCredits} CE
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onNavigate('/player', { courseId: course.id })}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <PlayCircle className="h-4 w-4 mr-1" />
+                      Start
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
