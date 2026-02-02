@@ -18,8 +18,10 @@ import { CoursePlayer } from './pages/CoursePlayer';
 import { Loader2 } from 'lucide-react';
 //import { EnrollmentTestPanel } from './scripts/enrollmentServiceVerification';
 //import { ProgressTestPanel } from './scripts/progressServiceVerification';
-import { GradeTestPanel } from './scripts/gradeServiceVerification';
+//import { GradeTestPanel } from './scripts/gradeServiceVerification';
+import { HooksTestPanel } from './scripts/hooksIntegrationVertification';
 
+// Loading screen while waiting for auth check'
 // Loading spinner for initial auth check
 const LoadingScreen: React.FC = () => (
   <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -90,7 +92,7 @@ const AppContent: React.FC = () => {
           />
         );
       case '/audit':
-        return <GradeTestPanel />;  
+        return <HooksTestPanel  />;  
       //return <AuditLogs />;
       case '/courses':
         return <CourseCatalog onNavigate={handleNavigate} />;
