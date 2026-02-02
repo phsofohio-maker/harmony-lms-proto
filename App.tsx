@@ -17,7 +17,8 @@ import { CourseCatalog } from './pages/CourseCatalog';
 import { CoursePlayer } from './pages/CoursePlayer';
 import { Loader2 } from 'lucide-react';
 //import { EnrollmentTestPanel } from './scripts/enrollmentServiceVerification';
-import { ProgressTestPanel } from './scripts/progressServiceVerification';
+//import { ProgressTestPanel } from './scripts/progressServiceVerification';
+import { GradeTestPanel } from './scripts/gradeServiceVerification';
 
 // Loading spinner for initial auth check
 const LoadingScreen: React.FC = () => (
@@ -89,7 +90,7 @@ const AppContent: React.FC = () => {
           />
         );
       case '/audit':
-        return <ProgressTestPanel />;  
+        return <GradeTestPanel />;  
       //return <AuditLogs />;
       case '/courses':
         return <CourseCatalog onNavigate={handleNavigate} />;

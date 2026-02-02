@@ -302,7 +302,7 @@ import {
       ...currentBlockProgress,
       blockId,
       completed: passed,
-      completedAt: passed ? new Date().toISOString() : currentBlockProgress.completedAt,
+      completedAt: passed ? new Date().toISOString() : (currentBlockProgress.completedAt || null),
       score,
       attempts: (currentBlockProgress.attempts || 0) + 1,
       lastAttemptAt: new Date().toISOString(),

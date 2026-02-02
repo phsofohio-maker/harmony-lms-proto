@@ -174,6 +174,27 @@ service cloud.firestore {
       allow delete: if false;
     }
     
+      // ============================================
+      // PROGRESS TRACKING
+      // ============================================
+
+      match /progress/{progressId} {
+        // Users can read their own progress; Admins and instructors can read all
+        allow read: if isAuthenticated() && (
+          resource.data.userId == request.auth.uid || 
+          hasAnyRole(['admin', 'instructor'])
+        );
+
+        // Users can create/update their own progress records
+        // Admins can update any progress record
+        allow create, update: if isAuthenticated() && (
+          (request.resource.data.userId == request.auth.uid) || isAdmin()
+        );
+        
+        // Progress records should generally not be deleted for audit purposes
+        allow delete: if isAdmin();
+      }
+
     // ============================================
     // CATCH-ALL: Deny everything else
     // ============================================
