@@ -15,6 +15,18 @@
         { "fieldPath": "courseId", "order": "ASCENDING" },
         { "fieldPath": "enrolledAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "indexes": [
+        {
+          "collectionGroup": "progress",
+          "queryScope": "COLLECTION",
+          "fields": [
+            { "fieldPath": "userId", "order": "ASCENDING" },
+            { "fieldPath": "courseId", "order": "ASCENDING" }
+          ]
+        }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -16,6 +16,8 @@ import { AuditLogs } from './pages/AuditLogs';
 import { CourseCatalog } from './pages/CourseCatalog';
 import { CoursePlayer } from './pages/CoursePlayer';
 import { Loader2 } from 'lucide-react';
+//import { EnrollmentTestPanel } from './scripts/enrollmentServiceVerification';
+import { ProgressTestPanel } from './scripts/progressServiceVerification';
 
 // Loading spinner for initial auth check
 const LoadingScreen: React.FC = () => (
@@ -87,7 +89,8 @@ const AppContent: React.FC = () => {
           />
         );
       case '/audit':
-        return <AuditLogs />;
+        return <ProgressTestPanel />;  
+      //return <AuditLogs />;
       case '/courses':
         return <CourseCatalog onNavigate={handleNavigate} />;
       default:
