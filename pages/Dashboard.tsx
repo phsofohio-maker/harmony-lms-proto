@@ -162,16 +162,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate }) => {
             {courses.map((course) => (
               <div
                 key={course.id}
-                className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-all group"
+                className="group bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-all cursor-pointer"
+                onClick={() => onNavigate('/course', { courseId: course.id })}
               >
                 {/* Thumbnail */}
-                <div className="h-32 bg-gradient-to-br from-brand-500 to-brand-700 relative">
-                  {course.thumbnailUrl && (
+                <div className="h-32 bg-slate-100 relative overflow-hidden">
+                  {course.thumbnailUrl ? (
                     <img
                       src={course.thumbnailUrl}
                       alt={course.title}
-                      className="w-full h-full object-cover opacity-80"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-500 to-brand-700">
+                      <BookOpen className="h-8 w-8 text-white/50" />
+                    </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                   <div className="absolute bottom-3 left-3 flex items-center gap-2">
@@ -188,7 +193,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate }) => {
 
                 {/* Content */}
                 <div className="p-4">
-                  <h3 className="font-bold text-slate-900 mb-1 line-clamp-1">
+                  <h3 className="font-bold text-slate-900 mb-1 line-clamp-1 group-hover:text-brand-600 transition-colors">
                     {course.title}
                   </h3>
                   <p className="text-sm text-slate-500 mb-4 line-clamp-2 min-h-[40px]">
@@ -209,11 +214,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate }) => {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => onNavigate('/player', { courseId: course.id })}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onNavigate('/course', { courseId: course.id });
+                      }}
                       className="opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <PlayCircle className="h-4 w-4 mr-1" />
-                      Start
+                      View
                     </Button>
                   </div>
                 </div>

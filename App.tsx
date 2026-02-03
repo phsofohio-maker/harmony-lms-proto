@@ -1,9 +1,9 @@
 /**
- * Application Root
+ * App.tsx - Complete Updated Routing
  * 
- * Wraps the app in AuthProvider and handles routing based on auth state.
- * 
- * @module App
+ * Includes new routes:
+ * - /course/:id -> CourseDetail (module selection)
+ * - /player -> CoursePlayer (requires courseId + moduleId)
  */
 
 import React, { useState } from 'react';
@@ -14,15 +14,11 @@ import { Dashboard } from './pages/Dashboard';
 import { ModuleBuilder } from './pages/ModuleBuilder';
 import { AuditLogs } from './pages/AuditLogs';
 import { CourseCatalog } from './pages/CourseCatalog';
+import { CourseDetail } from './pages/CourseDetail';
 import { CoursePlayer } from './pages/CoursePlayer';
-import { Loader2 } from 'lucide-react';
-//import { EnrollmentTestPanel } from './scripts/enrollmentServiceVerification';
-//import { ProgressTestPanel } from './scripts/progressServiceVerification';
-//import { GradeTestPanel } from './scripts/gradeServiceVerification';
-import { HooksTestPanel } from './scripts/hooksIntegrationVertification';
+import { Button } from './components/ui/Button';
+import { Loader2, AlertCircle } from 'lucide-react';
 
-// Loading screen while waiting for auth check'
-// Loading spinner for initial auth check
 const LoadingScreen: React.FC = () => (
   <div className="min-h-screen bg-slate-50 flex items-center justify-center">
     <div className="text-center">
@@ -32,70 +28,112 @@ const LoadingScreen: React.FC = () => (
   </div>
 );
 
-// Main app content (requires auth)
 const AppContent: React.FC = () => {
   const { user, isLoading, isAuthenticated, logout } = useAuth();
   const [currentPath, setCurrentPath] = useState('/');
   
-  // Route state for module builder
-  const [builderContext, setBuilderContext] = useState<{
+  // Context for routes that need IDs
+  const [routeContext, setRouteContext] = useState<{
     courseId?: string;
     moduleId?: string;
   }>({});
 
-  // Show loading during initial auth check
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
+  if (isLoading) return <LoadingScreen />;
+  if (!isAuthenticated || !user) return <Login />;
 
-  // Show login if not authenticated
-  if (!isAuthenticated || !user) {
-    return <Login />;
-  }
-
-  // Handle navigation with context
+  // Navigation handler
   const handleNavigate = (path: string, context?: Record<string, any>) => {
     setCurrentPath(path);
     if (context) {
-      setBuilderContext(context);
+      setRouteContext(prev => ({ ...prev, ...context }));
     }
   };
 
-  // Handle logout
   const handleLogout = async () => {
     await logout();
     setCurrentPath('/');
+    setRouteContext({});
   };
 
-  // Route to player
+  // ============================================
+  // FULL-SCREEN ROUTES (no sidebar)
+  // ============================================
+  
+  // Course Detail Page
+  if (currentPath === '/course') {
+    if (!routeContext.courseId) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="text-center">
+            <AlertCircle className="h-10 w-10 text-slate-400 mx-auto mb-4" />
+            <p className="text-slate-600 mb-4">No course selected.</p>
+            <Button onClick={() => setCurrentPath('/courses')}>
+              Go to Catalog
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <CourseDetail
+        courseId={routeContext.courseId}
+        onNavigate={handleNavigate}
+        onBack={() => setCurrentPath('/courses')}
+      />
+    );
+  }
+  
+  // Course Player
   if (currentPath === '/player') {
+    if (!routeContext.courseId || !routeContext.moduleId) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="text-center">
+            <AlertCircle className="h-10 w-10 text-slate-400 mx-auto mb-4" />
+            <p className="text-slate-600 mb-4">No module selected.</p>
+            <Button onClick={() => setCurrentPath('/courses')}>
+              Go to Catalog
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <CoursePlayer 
-        userUid={user.uid} 
-        onBack={() => setCurrentPath('/courses')} 
+        courseId={routeContext.courseId}
+        moduleId={routeContext.moduleId}
+        onBack={() => setCurrentPath('/course')}
       />
     );
   }
 
-  // Router component
+  // ============================================
+  // SIDEBAR ROUTES
+  // ============================================
+  
   const renderPage = () => {
     switch (currentPath) {
       case '/':
         return <Dashboard user={user} onNavigate={handleNavigate} />;
+        
+      case '/courses':
+        return <CourseCatalog onNavigate={handleNavigate} />;
+        
       case '/builder':
         return (
           <ModuleBuilder
-            courseId={builderContext.courseId}
-            moduleId={builderContext.moduleId}
+            courseId={routeContext.courseId}
+            moduleId={routeContext.moduleId}
             userUid={user.uid}
             onBack={() => setCurrentPath('/')}
           />
         );
+        
       case '/audit':
-        return <HooksTestPanel  />;  
-      //return <AuditLogs />;
-      case '/courses':
-        return <CourseCatalog onNavigate={handleNavigate} />;
+        return <AuditLogs />;
+        
       default:
         return <Dashboard user={user} onNavigate={handleNavigate} />;
     }
@@ -116,13 +154,23 @@ const AppContent: React.FC = () => {
   );
 };
 
-// Root component with providers
-const App: React.FC = () => {
-  return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
-  );
-};
+const App: React.FC = () => (
+  <AuthProvider>
+    <AppContent />
+  </AuthProvider>
+);
 
 export default App;
+
+// ============================================
+// NAVIGATION PATTERNS
+// ============================================
+
+// From CourseCatalog -> CourseDetail:
+// onNavigate('/course', { courseId: course.id })
+
+// From CourseDetail -> CoursePlayer:
+// onNavigate('/player', { courseId, moduleId })
+
+// From Dashboard -> CourseDetail:
+// onNavigate('/course', { courseId: course.id })

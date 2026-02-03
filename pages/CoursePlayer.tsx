@@ -1,28 +1,114 @@
+/**
+ * Course Player Page (Updated)
+ * 
+ * Now integrates with Firestore for:
+ * - Enrollment verification
+ * - Progress tracking per block
+ * - Quiz attempt recording
+ * - Grade persistence
+ * 
+ * @module pages/CoursePlayer
+ */
+
 import React, { useState, useEffect } from 'react';
-import { MOCK_COURSES } from '../services/mockData';
-import { Module, QuizBlockData } from '../types';
+import { Module, QuizBlockData, ContentBlock } from '../types';
 import { BlockRenderer } from '../components/player/BlockRenderer';
-import { auditService } from '../services/auditService';
 import { Button } from '../components/ui/Button';
-import { ArrowLeft, CheckCircle, AlertCircle, Award } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  CheckCircle, 
+  AlertCircle, 
+  Award, 
+  Loader2,
+  Lock,
+  BookOpen
+} from 'lucide-react';
 import { cn } from '../utils';
 
+// Hooks
+import { useEnrollment } from '../hooks/useUserEnrollments';
+import { useModuleProgress } from '../hooks/useModuleProgress';
+import { useMyGrade } from '../hooks/useGrade';
+import { useAuth } from '../contexts/AuthContext';
+
+// Services for module fetching
+import { getModuleWithBlocks } from '../services/courseService';
+
 interface CoursePlayerProps {
-  userUid: string;
+  courseId: string;
+  moduleId: string;
   onBack: () => void;
 }
 
-export const CoursePlayer: React.FC<CoursePlayerProps> = ({ userUid, onBack }) => {
-  // Mock loading specific course module
-  const moduleData: Module = MOCK_COURSES[0].modules[0];
-
+export const CoursePlayer: React.FC<CoursePlayerProps> = ({ 
+  courseId, 
+  moduleId, 
+  onBack 
+}) => {
+  const { user } = useAuth();
+  
+  // Module data state
+  const [moduleData, setModuleData] = useState<Module | null>(null);
+  const [isLoadingModule, setIsLoadingModule] = useState(true);
+  const [moduleError, setModuleError] = useState<string | null>(null);
+  
+  // Quiz answers (local state until submission)
   const [answers, setAnswers] = useState<Record<string, number[]>>({});
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [grade, setGrade] = useState<{ score: number; passed: boolean } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Hooks for persistent data
+  const { 
+    enrollment, 
+    isEnrolled, 
+    isLoading: enrollmentLoading,
+    enroll 
+  } = useEnrollment(courseId);
+  
+  const { 
+    progress, 
+    completionPercent,
+    isComplete: moduleComplete,
+    completeBlock, 
+    submitQuiz,
+    isLoading: progressLoading 
+  } = useModuleProgress(courseId, moduleId);
+  
+  const { 
+    grade, 
+    isPassed, 
+    competencyLevel,
+    isLoading: gradeLoading 
+  } = useMyGrade(moduleId);
 
+  // Load module data
+  useEffect(() => {
+    const loadModule = async () => {
+      if (!courseId || !moduleId) return;
+      
+      setIsLoadingModule(true);
+      setModuleError(null);
+      
+      try {
+        const data = await getModuleWithBlocks(courseId, moduleId);
+        if (!data) {
+          setModuleError('Module not found');
+          return;
+        }
+        setModuleData(data);
+      } catch (err) {
+        setModuleError(err instanceof Error ? err.message : 'Failed to load module');
+      } finally {
+        setIsLoadingModule(false);
+      }
+    };
+    
+    loadModule();
+  }, [courseId, moduleId]);
+
+  // Handle quiz answer selection
   const handleQuizAnswer = (blockId: string, questionIndex: number, optionIndex: number) => {
-    if (isSubmitted) return; // Freeze after submission
-
+    if (isPassed) return; // Freeze if already passed
+    
     setAnswers(prev => {
       const blockAnswers = prev[blockId] ? [...prev[blockId]] : [];
       blockAnswers[questionIndex] = optionIndex;
@@ -30,161 +116,318 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({ userUid, onBack }) =
     });
   };
 
-  const calculateGrade = () => {
-    let totalPoints = 0;
-    let earnedPoints = 0;
-    let hasQuiz = false;
-
-    moduleData.blocks.forEach(block => {
-      if (block.type === 'quiz') {
-        hasQuiz = true;
-        const quiz = block.data as QuizBlockData;
-        const blockAnswers = answers[block.id] || [];
-        
-        quiz.questions.forEach((q, idx) => {
-          totalPoints += 1; // Simplified: 1 point per question
-          if (blockAnswers[idx] === q.correctAnswer) {
-            earnedPoints += 1;
-          }
-        });
-      }
-    });
-
-    if (!hasQuiz) return { score: 100, passed: true };
-
-    const score = Math.round((earnedPoints / totalPoints) * 100);
-    return { score, passed: score >= moduleData.passingScore };
+  // Mark a content block as viewed/completed
+  const handleBlockComplete = async (blockId: string) => {
+    if (!moduleData || !user) return;
+    
+    const requiredBlocks = moduleData.blocks.filter(b => b.required).length;
+    await completeBlock(blockId, requiredBlocks);
   };
 
-  const handleSubmit = () => {
-    const result = calculateGrade();
-    setGrade(result);
-    setIsSubmitted(true);
+  // Calculate quiz score
+  const calculateQuizScore = (quizBlock: ContentBlock): { score: number; passed: boolean } => {
+    const quiz = quizBlock.data as QuizBlockData;
+    const blockAnswers = answers[quizBlock.id] || [];
+    
+    let correct = 0;
+    quiz.questions.forEach((q, idx) => {
+      if (blockAnswers[idx] === q.correctAnswer) {
+        correct++;
+      }
+    });
+    
+    const score = quiz.questions.length > 0 
+      ? Math.round((correct / quiz.questions.length) * 100)
+      : 0;
+      
+    return { 
+      score, 
+      passed: score >= (quiz.passingScore || moduleData?.passingScore || 80) 
+    };
+  };
 
-    if (result.passed) {
-      auditService.logAction(
-        userUid,
-        'Staff User',
-        'GRADE_ENTRY',
-        moduleData.id,
-        `Completed module "${moduleData.title}" with score: ${result.score}%`
-      );
-    } else {
-        auditService.logAction(
-            userUid,
-            'Staff User',
-            'GRADE_ENTRY',
-            moduleData.id,
-            `Failed module "${moduleData.title}" with score: ${result.score}%`
-        );
+  // Submit module (process all quizzes)
+  const handleSubmit = async () => {
+    if (!moduleData || !user) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const requiredBlocks = moduleData.blocks.filter(b => b.required).length;
+      
+      // Process each quiz block
+      for (const block of moduleData.blocks) {
+        if (block.type === 'quiz') {
+          const { score, passed } = calculateQuizScore(block);
+          await submitQuiz(block.id, score, passed, requiredBlocks);
+        }
+      }
+      
+      // Mark non-quiz blocks as complete
+      for (const block of moduleData.blocks) {
+        if (block.type !== 'quiz' && block.required) {
+          const isAlreadyComplete = progress?.completedBlocks[block.id]?.completed;
+          if (!isAlreadyComplete) {
+            await completeBlock(block.id, requiredBlocks);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Submit error:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Check if all questions in all quizzes are answered
-  const canSubmit = moduleData.blocks.every(block => {
+  // Check if all quiz questions are answered
+  const allQuestionsAnswered = moduleData?.blocks.every(block => {
     if (block.type !== 'quiz') return true;
     const quiz = block.data as QuizBlockData;
     const blockAnswers = answers[block.id] || [];
-    // Ensure we have an answer for every question index
     return quiz.questions.every((_, idx) => blockAnswers[idx] !== undefined);
-  });
+  }) ?? false;
 
-  if (grade && grade.passed) {
-      return (
-          <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center border border-slate-200">
-                  <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <Award className="h-10 w-10 text-green-600" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-2">Module Completed!</h2>
-                  <p className="text-slate-500 mb-6">
-                      You have successfully passed <strong>{moduleData.title}</strong> with a score of <span className="text-green-600 font-bold">{grade.score}%</span>.
-                  </p>
-                  <div className="bg-slate-50 rounded border border-slate-200 p-4 mb-6 text-xs text-slate-500">
-                      Certificate ID: {Math.random().toString(36).substr(2, 12).toUpperCase()} <br/>
-                      Verified by Harmony Audit Trail
-                  </div>
-                  <Button onClick={onBack} className="w-full">Return to Catalog</Button>
-              </div>
-          </div>
-      )
+  // Calculate overall quiz result for display
+  const getOverallResult = (): { score: number; passed: boolean } | null => {
+    if (!moduleData) return null;
+    
+    const quizBlocks = moduleData.blocks.filter(b => b.type === 'quiz');
+    if (quizBlocks.length === 0) return { score: 100, passed: true };
+    
+    let totalScore = 0;
+    quizBlocks.forEach(block => {
+      const { score } = calculateQuizScore(block);
+      totalScore += score;
+    });
+    
+    const avgScore = Math.round(totalScore / quizBlocks.length);
+    return { score: avgScore, passed: avgScore >= (moduleData.passingScore || 80) };
+  };
+
+  // Loading state
+  const isLoading = isLoadingModule || enrollmentLoading || progressLoading || gradeLoading;
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 text-brand-600 animate-spin mx-auto" />
+          <p className="mt-4 text-slate-600 font-medium">Loading module...</p>
+        </div>
+      </div>
+    );
   }
+
+  // Error state
+  if (moduleError || !moduleData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-8">
+        <div className="bg-white rounded-xl border border-red-200 p-8 max-w-md text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Failed to Load</h2>
+          <p className="text-slate-600 mb-6">{moduleError || 'Module not found'}</p>
+          <Button onClick={onBack} variant="outline">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Not enrolled state
+  if (!isEnrolled) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-8">
+        <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-md text-center shadow-sm">
+          <Lock className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Enrollment Required</h2>
+          <p className="text-slate-600 mb-6">
+            You need to be enrolled in this course to access the content.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={onBack} variant="outline">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Go Back
+            </Button>
+            <Button onClick={enroll}>
+              <BookOpen className="h-4 w-4 mr-2" />
+              Enroll Now
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Already passed state
+  if (isPassed && grade) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center border border-slate-200">
+          <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Award className="h-10 w-10 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Module Completed!</h2>
+          <p className="text-slate-500 mb-4">
+            You have successfully passed <strong>{moduleData.title}</strong> with a score of{' '}
+            <span className="text-green-600 font-bold">{grade.score}%</span>.
+          </p>
+          {competencyLevel && (
+            <div className="mb-6">
+              <span className={cn(
+                "px-3 py-1 rounded-full text-sm font-medium",
+                competencyLevel === 'mastery' && "bg-purple-100 text-purple-700",
+                competencyLevel === 'competent' && "bg-green-100 text-green-700",
+                competencyLevel === 'developing' && "bg-yellow-100 text-yellow-700",
+                competencyLevel === 'not_competent' && "bg-red-100 text-red-700"
+              )}>
+                {competencyLevel.replace('_', ' ').toUpperCase()}
+              </span>
+            </div>
+          )}
+          <div className="bg-slate-50 rounded border border-slate-200 p-4 mb-6 text-xs text-slate-500">
+            Completed: {new Date(grade.gradedAt).toLocaleDateString()}<br/>
+            Certificate ID: {grade.id.slice(-12).toUpperCase()}
+          </div>
+          <Button onClick={onBack} className="w-full">Return to Catalog</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Main player view
+  const result = moduleComplete ? getOverallResult() : null;
 
   return (
     <div className="flex flex-col h-screen bg-white">
-      {/* Player Header */}
+      {/* Header */}
       <div className="h-16 border-b border-slate-200 flex items-center justify-between px-6 bg-white sticky top-0 z-20">
         <div className="flex items-center gap-4">
-           <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors">
-             <ArrowLeft className="h-5 w-5" />
-           </button>
-           <div>
-             <h1 className="text-sm font-bold text-slate-900 line-clamp-1">{moduleData.title}</h1>
-             <div className="flex items-center gap-2 text-xs text-slate-500">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                In Progress
-             </div>
-           </div>
+          <button 
+            onClick={onBack} 
+            className="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div>
+            <h1 className="text-sm font-bold text-slate-900 line-clamp-1">
+              {moduleData.title}
+            </h1>
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+              {completionPercent}% Complete
+            </div>
+          </div>
         </div>
+        
+        {/* Progress bar */}
         <div className="hidden md:flex items-center gap-2">
-           <div className="text-right mr-2">
-             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Progress</p>
-             <p className="text-xs font-bold text-brand-600">Step {Object.keys(answers).length > 0 ? '2' : '1'} of {moduleData.blocks.length}</p>
-           </div>
-           <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
-             <div className="h-full bg-brand-500 w-1/3"></div>
-           </div>
+          <div className="text-right mr-2">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Progress</p>
+            <p className="text-xs font-bold text-brand-600">{completionPercent}%</p>
+          </div>
+          <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-brand-500 transition-all duration-300" 
+              style={{ width: `${completionPercent}%` }}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Content Scroll Area */}
+      {/* Content */}
       <div className="flex-1 overflow-y-auto bg-slate-50">
         <div className="max-w-3xl mx-auto py-12 px-6">
-           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-12 min-h-[80vh]">
-              {grade && !grade.passed && (
-                  <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 text-red-800">
-                      <AlertCircle className="h-5 w-5" />
-                      <div>
-                          <p className="font-bold text-sm">Assignment Failed</p>
-                          <p className="text-xs">You scored {grade.score}%. A minimum of {moduleData.passingScore}% is required. Please review and try again.</p>
-                      </div>
-                      <Button size="sm" variant="outline" className="ml-auto bg-white border-red-200 text-red-700 hover:bg-red-50" onClick={() => { setIsSubmitted(false); setGrade(null); }}>Retry</Button>
-                  </div>
-              )}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-12">
+            
+            {/* Failed attempt message */}
+            {result && !result.passed && (
+              <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 text-red-800">
+                <AlertCircle className="h-5 w-5" />
+                <div className="flex-1">
+                  <p className="font-bold text-sm">Assessment Not Passed</p>
+                  <p className="text-xs">
+                    You scored {result.score}%. A minimum of {moduleData.passingScore}% is required.
+                  </p>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="bg-white border-red-200 text-red-700 hover:bg-red-50"
+                  onClick={() => setAnswers({})}
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
 
-              {moduleData.blocks.map(block => (
+            {/* Blocks */}
+            {moduleData.blocks.map(block => (
+              <div key={block.id} className="relative">
                 <BlockRenderer 
-                  key={block.id} 
                   block={block} 
                   onQuizAnswer={handleQuizAnswer}
                   answers={answers}
                 />
-              ))}
-
-              <div className="mt-16 pt-8 border-t border-slate-100 flex flex-col items-center gap-4">
-                 <p className="text-sm text-slate-500 italic">
-                    By submitting, you acknowledge that you have reviewed all training materials above.
-                 </p>
-                 <Button 
-                   size="lg" 
-                   className="w-full md:w-auto px-12" 
-                   onClick={handleSubmit}
-                   disabled={!canSubmit || isSubmitted}
-                 >
-                   {isSubmitted ? 'Grading...' : 'Complete & Submit Module'}
-                 </Button>
-                 {!canSubmit && (
-                    <p className="text-xs text-amber-600 flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        Please answer all knowledge check questions to proceed.
-                    </p>
-                 )}
+                
+                {/* Completion indicator for non-quiz blocks */}
+                {block.type !== 'quiz' && block.required && (
+                  <div className="flex justify-end mt-2 mb-6">
+                    {progress?.completedBlocks[block.id]?.completed ? (
+                      <span className="text-xs text-green-600 flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3" />
+                        Completed
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleBlockComplete(block.id)}
+                        className="text-xs text-brand-600 hover:text-brand-800 flex items-center gap-1"
+                      >
+                        <CheckCircle className="h-3 w-3" />
+                        Mark as read
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
-           </div>
-           
-           <div className="text-center mt-8 text-xs text-slate-400">
-              Harmony Health LMS &bull; v1.2.0 &bull; Secure Audit Logging Enabled
-           </div>
+            ))}
+
+            {/* Submit section */}
+            <div className="mt-16 pt-8 border-t border-slate-100 flex flex-col items-center gap-4">
+              <p className="text-sm text-slate-500 italic text-center">
+                By submitting, you acknowledge that you have reviewed all training materials above.
+              </p>
+              <Button 
+                size="lg" 
+                className="w-full md:w-auto px-12" 
+                onClick={handleSubmit}
+                disabled={!allQuestionsAnswered || isSubmitting || isPassed}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : isPassed ? (
+                  'Already Completed'
+                ) : (
+                  'Complete & Submit Module'
+                )}
+              </Button>
+              
+              {!allQuestionsAnswered && (
+                <p className="text-xs text-amber-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  Please answer all knowledge check questions to proceed.
+                </p>
+              )}
+            </div>
+          </div>
+          
+          <div className="text-center mt-8 text-xs text-slate-400">
+            Harmony Health LMS &bull; Secure Audit Logging Enabled
+          </div>
         </div>
       </div>
     </div>
