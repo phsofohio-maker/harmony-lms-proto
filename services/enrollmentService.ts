@@ -22,7 +22,7 @@ import {
     Timestamp,
   } from 'firebase/firestore';
   import { db } from './firebase';
-  import { Enrollment, EnrollmentStatus } from '../types';
+  import { Enrollment, EnrollmentStatus } from '../functions/src/types';
   import { auditService } from './auditService';
   
   const ENROLLMENTS_COLLECTION = 'enrollments';

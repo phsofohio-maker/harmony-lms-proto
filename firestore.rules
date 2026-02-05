@@ -195,6 +195,15 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
 
+      // ============================================
+      // COURSE GRADES
+      // ============================================
+
+      match /course_grades/{gradeId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin() || isInstructor();
+      }
+
     // ============================================
     // CATCH-ALL: Deny everything else
     // ============================================

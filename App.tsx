@@ -19,6 +19,8 @@ import { CoursePlayer } from './pages/CoursePlayer';
 import { Button } from './components/ui/Button';
 import { Loader2, AlertCircle } from 'lucide-react';
 
+import { WeightedGradingTestPanel } from './scripts/weightedGradingVerification';
+
 const LoadingScreen: React.FC = () => (
   <div className="min-h-screen bg-slate-50 flex items-center justify-center">
     <div className="text-center">

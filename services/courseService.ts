@@ -23,7 +23,7 @@ import {
     writeBatch,
   } from 'firebase/firestore';
   import { db } from './firebase';
-  import { Course, Module, ContentBlock } from '../types';
+  import { Course, Module, ContentBlock } from '../functions/src/types';
   import { auditService } from './auditService';
   
   // Collection references
@@ -54,13 +54,19 @@ import {
    */
   const docToModule = (doc: any): Module => ({
     id: doc.id,
-    courseId: doc.data().courseId || '',
-    title: doc.data().title || '',
-    description: doc.data().description || '',
+    courseId: doc.data().courseId,
+    title: doc.data().title,
+    description: doc.data().description,
+    estimatedMinutes: doc.data().estimatedMinutes,
+    order: doc.data().order || 0,
     status: doc.data().status || 'draft',
-    passingScore: doc.data().passingScore || 80,
-    estimatedMinutes: doc.data().estimatedMinutes || 0,
-    blocks: [], // Loaded separately
+    passingScore: doc.data().passingScore || 70,
+    
+    // NEW: Extract weighted grading fields
+    weight: doc.data().weight || 0,
+    isCritical: doc.data().isCritical || false,
+    
+    blocks: [], // Populated separately if needed
   });
   
   /**
@@ -204,8 +210,20 @@ import {
     const modulesRef = collection(db, COURSES_COLLECTION, courseId, MODULES_SUBCOLLECTION);
     const docRef = doc(modulesRef);
     
+    // CRITICAL: Ensure all fields are persisted
     await setDoc(docRef, {
-      ...module,
+      title: module.title,
+      description: module.description,
+      estimatedMinutes: module.estimatedMinutes,
+      order: module.order,
+      status: module.status,
+      passingScore: module.passingScore || 70,
+      
+      // NEW: Weighted grading fields
+      weight: module.weight || 0,
+      isCritical: module.isCritical || false,
+      
+      // Metadata
       courseId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -216,7 +234,7 @@ import {
       actorName,
       'MODULE_CREATE',
       docRef.id,
-      `Created module: ${module.title} in course ${courseId}`
+      `Created module: ${module.title} (weight: ${module.weight}%, critical: ${module.isCritical})`
     );
     
     return docRef.id;
@@ -234,10 +252,23 @@ import {
   ): Promise<void> => {
     const moduleRef = doc(db, COURSES_COLLECTION, courseId, MODULES_SUBCOLLECTION, moduleId);
     
-    await updateDoc(moduleRef, {
-      ...updates,
+    // Build update object, only including defined fields
+    const updateData: Record<string, any> = {
       updatedAt: serverTimestamp(),
-    });
+    };
+    
+    if (updates.title !== undefined) updateData.title = updates.title;
+    if (updates.description !== undefined) updateData.description = updates.description;
+    if (updates.estimatedMinutes !== undefined) updateData.estimatedMinutes = updates.estimatedMinutes;
+    if (updates.order !== undefined) updateData.order = updates.order;
+    if (updates.status !== undefined) updateData.status = updates.status;
+    if (updates.passingScore !== undefined) updateData.passingScore = updates.passingScore;
+    
+    // NEW: Include weighted grading fields in updates
+    if (updates.weight !== undefined) updateData.weight = updates.weight;
+    if (updates.isCritical !== undefined) updateData.isCritical = updates.isCritical;
+    
+    await updateDoc(moduleRef, updateData);
     
     await auditService.logToFirestore(
       actorId,
