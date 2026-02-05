@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Enrollment } from '../types';
+import { Enrollment } from '../functions/src/types';
 import {
   getUserEnrollments,
   getEnrollment,

@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Module, ContentBlock, BlockType } from '../types';
+import { Module, ContentBlock, BlockType } from '../functions/src/types';
 import {
   getModuleWithBlocks,
   createModule,
@@ -66,6 +66,8 @@ export const useModule = ({ courseId, moduleId }: UseModuleOptions): UseModuleRe
         passingScore: 80,
         estimatedMinutes: 15,
         blocks: [],
+        weight: 0,
+        isCritical: false
       };
       setModule(newModule);
       originalRef.current = JSON.stringify(newModule); // Set baseline for dirty tracking
@@ -205,6 +207,8 @@ export const useModule = ({ courseId, moduleId }: UseModuleOptions): UseModuleRe
             status: module.status,
             passingScore: module.passingScore,
             estimatedMinutes: module.estimatedMinutes,
+            weight: 0,
+            isCritical: false
           },
           user.uid,
           user.displayName

@@ -17,7 +17,7 @@ import {
   } from 'firebase/auth';
   import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
   import { auth, db } from './firebase';
-  import { User, UserRoleType } from '../types';
+  import { User, UserRoleType } from '../functions/src/types';
   
   // Firestore collection for user profiles
   const USERS_COLLECTION = 'users';

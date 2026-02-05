@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { CourseGradeCalculation } from '../types';
+import { CourseGradeCalculation } from '../functions/src/types';
 import {
   getCourseGrade,
   calculateAndSaveCourseGrade,

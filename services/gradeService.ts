@@ -22,7 +22,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Grade } from '../types';
+import { Grade } from '../functions/src/types';
 import { auditService } from './auditService';
 
 const GRADES_COLLECTION = 'grades';

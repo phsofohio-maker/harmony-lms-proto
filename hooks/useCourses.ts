@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Course } from '../types';
+import { Course } from '../functions/src/types';
 import { getCourses, createCourse } from '../services/courseService';
 import { useAuth } from '../contexts/AuthContext';
 

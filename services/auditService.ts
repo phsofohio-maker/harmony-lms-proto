@@ -25,7 +25,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { AuditLog } from '../types';
+import { AuditLog } from '../functions/src/types';
 import { generateId } from '../utils';
 
 // Firestore collection
