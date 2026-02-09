@@ -1,10 +1,157 @@
 rules_version = '2';
 
-// Craft rules based on data in your Firestore database
-// allow write: if firestore.get(
-//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
+/**
+ * Firebase Storage Security Rules - Production-Ready
+ * 
+ * Design Principles:
+ * - Fail Closed: Deny by default
+ * - File Type Validation: Only allowed MIME types
+ * - Size Limits: Prevent abuse
+ * - Path-Based Access: Organized by resource type
+ * 
+ * Last Updated: Phase 1.5 Completion
+ */
+
 service firebase.storage {
   match /b/{bucket}/o {
+    
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'admin';
+    }
+    
+    function isInstructor() {
+      return isAuthenticated() && request.auth.token.role == 'instructor';
+    }
+    
+    function canAuthorContent() {
+      return isAdmin() || isInstructor();
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // File validation helpers
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isVideo() {
+      return request.resource.contentType.matches('video/.*');
+    }
+    
+    function isPDF() {
+      return request.resource.contentType == 'application/pdf';
+    }
+    
+    function isAllowedContentType() {
+      return isImage() || isVideo() || isPDF() ||
+        request.resource.contentType == 'application/json' ||
+        request.resource.contentType.matches('text/.*');
+    }
+    
+    function isUnderSizeLimit(maxSizeMB) {
+      return request.resource.size < maxSizeMB * 1024 * 1024;
+    }
+    
+    // ============================================
+    // COURSE CONTENT (Thumbnails, Media, PDFs)
+    // ============================================
+    
+    match /courses/{courseId}/{allPaths=**} {
+      // All authenticated users can read course content
+      allow read: if isAuthenticated();
+      
+      // Only content authors can upload course materials
+      allow write: if canAuthorContent() && 
+        isAllowedContentType() && 
+        isUnderSizeLimit(100);  // 100MB max per file
+      
+      allow delete: if canAuthorContent();
+    }
+    
+    // ============================================
+    // MODULE CONTENT
+    // ============================================
+    
+    match /modules/{moduleId}/{allPaths=**} {
+      // All authenticated users can read module content
+      allow read: if isAuthenticated();
+      
+      // Only content authors can upload
+      allow write: if canAuthorContent() && 
+        isAllowedContentType() && 
+        isUnderSizeLimit(100);
+      
+      allow delete: if canAuthorContent();
+    }
+    
+    // ============================================
+    // USER UPLOADS (Certificates, Profile Images)
+    // ============================================
+    
+    match /users/{userId}/profile/{fileName} {
+      // Users can read their own files; admins can read all
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Users can upload their own profile content
+      allow write: if isOwner(userId) && 
+        (isImage() || isPDF()) && 
+        isUnderSizeLimit(5);  // 5MB max for profile items
+      
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    match /users/{userId}/certificates/{fileName} {
+      // Users can read their own certificates; admins can read all
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Only admins can write certificates (generated server-side)
+      allow write: if isAdmin() && isPDF() && isUnderSizeLimit(5);
+      
+      // Certificates cannot be deleted (permanent record)
+      allow delete: if false;
+    }
+    
+    // ============================================
+    // TEMPORARY UPLOADS (For content authoring)
+    // ============================================
+    
+    match /temp/{userId}/{fileName} {
+      // Users can access their own temp files
+      allow read, write: if isOwner(userId) && 
+        isAllowedContentType() && 
+        isUnderSizeLimit(100);
+      
+      allow delete: if isOwner(userId);
+    }
+    
+    // ============================================
+    // EXPORTED DATA (Admin Reports)
+    // ============================================
+    
+    match /exports/{fileName} {
+      // Only admins can read exports
+      allow read: if isAdmin();
+      
+      // Only system (Cloud Functions) or admins can write
+      allow write: if isAdmin();
+      
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // CATCH-ALL: Deny everything else
+    // ============================================
+    
     match /{allPaths=**} {
       allow read, write: if false;
     }

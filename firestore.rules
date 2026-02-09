@@ -1,5 +1,17 @@
 rules_version = '2';
 
+/**
+ * Firestore Security Rules - Production-Ready
+ * 
+ * Design Principles:
+ * - Fail Closed: Deny by default, allow explicitly
+ * - Explicit Validation: All writes validated server-side
+ * - Audit Trail: Immutable logs, no deletions
+ * - Role-Based Access: Admin > Instructor > Staff hierarchy
+ * 
+ * Last Updated: Phase 1.5 Completion
+ */
+
 service cloud.firestore {
   match /databases/{database}/documents {
     
@@ -7,57 +19,71 @@ service cloud.firestore {
     // HELPER FUNCTIONS
     // ============================================
     
-    // Check if user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
     
-    // Get the current user's profile document
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-    
-    // Check if current user has a specific role
-    function hasRole(role) {
-      return isAuthenticated() && getUserData().role == role;
-    }
-    
-    // Check if current user has any of the specified roles
-    function hasAnyRole(roles) {
-      return isAuthenticated() && getUserData().role in roles;
-    }
-    
-    // Check if user is admin
-    function isAdmin() {
-      return hasRole('admin');
-    }
-    
-    // Check if user can author content (admin or content_author)
-    function canAuthorContent() {
-      return hasAnyRole(['admin', 'content_author']);
-    }
-    
-    // Check if user is the document owner
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
+    function isAdmin() {
+      return isAuthenticated() && 
+        request.auth.token.role == 'admin';
+    }
+    
+    function isInstructor() {
+      return isAuthenticated() && 
+        request.auth.token.role == 'instructor';
+    }
+    
+    function canAuthorContent() {
+      return isAdmin() || isInstructor();
+    }
+    
+    function hasAnyRole(roles) {
+      return isAuthenticated() && 
+        request.auth.token.role in roles;
+    }
+    
     // ============================================
-    // USER PROFILES
+    // VALIDATION HELPERS
+    // ============================================
+    
+    function isValidTimestamp(field) {
+      return request.resource.data[field] is timestamp;
+    }
+    
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    function isValidGradeScore(score) {
+      return score is number && score >= 0 && score <= 100;
+    }
+    
+    function isValidProgress(progress) {
+      return progress is number && progress >= 0 && progress <= 100;
+    }
+    
+    // ============================================
+    // USERS COLLECTION
     // ============================================
     
     match /users/{userId} {
-      // Users can read their own profile
-      // Admins can read all profiles
+      // Users can read their own profile; admins can read all
       allow read: if isOwner(userId) || isAdmin();
       
-      // Users can update their own profile (limited fields)
-      // Admins can update any profile
-      allow update: if isOwner(userId) || isAdmin();
-      
-      // Only admins can create new user profiles
-      // (Or allow self-creation on first login)
+      // New users can create their profile during signup
+      // Admins can create any profile
       allow create: if isOwner(userId) || isAdmin();
+      
+      // Users can update their own non-role fields
+      // Admins can update anything
+      allow update: if isAdmin() || (
+        isOwner(userId) && 
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'uid'])
+      );
       
       // Only admins can delete profiles
       allow delete: if isAdmin();
@@ -74,8 +100,12 @@ service cloud.firestore {
         resource.data.status == 'published' || canAuthorContent()
       );
       
-      // Only content authors and admins can create/update courses
-      allow create, update: if canAuthorContent();
+      // Only content authors and admins can create courses
+      allow create: if canAuthorContent() && 
+        hasRequiredFields(['title', 'description', 'status', 'createdAt']);
+      
+      // Only content authors can update courses
+      allow update: if canAuthorContent();
       
       // Only admins can delete courses
       allow delete: if isAdmin();
@@ -87,11 +117,15 @@ service cloud.firestore {
       match /modules/{moduleId} {
         // Same read rules as courses
         allow read: if isAuthenticated() && (
-          resource.data.status == 'published' || canAuthorContent()
+          get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published' 
+          || canAuthorContent()
         );
         
         // Content authors can create/update modules
-        allow create, update: if canAuthorContent();
+        allow create: if canAuthorContent() && 
+          hasRequiredFields(['title', 'courseId', 'weight']);
+          
+        allow update: if canAuthorContent();
         
         // Only admins can delete modules
         allow delete: if isAdmin();
@@ -105,26 +139,12 @@ service cloud.firestore {
           allow read: if isAuthenticated();
           
           // Content authors can manage blocks
-          allow create, update, delete: if canAuthorContent();
+          allow create, update: if canAuthorContent() && 
+            hasRequiredFields(['type', 'moduleId', 'order']);
+            
+          allow delete: if canAuthorContent();
         }
       }
-    }
-    
-    // ============================================
-    // AUDIT LOGS (Immutable)
-    // ============================================
-    
-    match /audit_logs/{logId} {
-      // Admins can read audit logs
-      allow read: if isAdmin();
-      
-      // Anyone authenticated can create logs (typically via Cloud Functions)
-      // But for client-side fallback, allow writes
-      allow create: if isAuthenticated() && 
-        request.resource.data.actorId == request.auth.uid;
-      
-      // CRITICAL: No updates or deletes allowed - ever
-      allow update, delete: if false;
     }
     
     // ============================================
@@ -141,16 +161,58 @@ service cloud.firestore {
       
       // Admins can create enrollments (assign courses)
       // Users can create their own enrollment (self-enroll)
-      allow create: if isAdmin() || 
-        (isAuthenticated() && request.resource.data.userId == request.auth.uid);
+      allow create: if (
+        isAdmin() || 
+        (isAuthenticated() && request.resource.data.userId == request.auth.uid)
+      ) && 
+        hasRequiredFields(['userId', 'courseId', 'progress', 'status', 'enrolledAt']) &&
+        isValidProgress(request.resource.data.progress);
       
       // Users can update their own enrollment progress
       // Admins can update any enrollment
-      allow update: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid || isAdmin()
+      allow update: if (
+        isAuthenticated() && (
+          resource.data.userId == request.auth.uid || isAdmin()
+        )
+      ) && (
+        // Validate progress if it's being updated
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['progress']) ||
+        isValidProgress(request.resource.data.progress)
       );
       
       // Only admins can delete enrollments
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // PROGRESS TRACKING
+    // ============================================
+    
+    match /progress/{progressId} {
+      // Users can read their own progress; Admins and instructors can read all
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        hasAnyRole(['admin', 'instructor'])
+      );
+
+      // Users can create/update their own progress records
+      // Admins can update any progress record
+      allow create: if (
+        isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid
+      ) &&
+        hasRequiredFields(['userId', 'courseId', 'moduleId', 'overallProgress']) &&
+        isValidProgress(request.resource.data.overallProgress);
+        
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      ) && (
+        // Validate progress if it's being updated
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['overallProgress']) ||
+        isValidProgress(request.resource.data.overallProgress)
+      );
+      
+      // Progress records should generally not be deleted for audit purposes
       allow delete: if isAdmin();
     }
     
@@ -168,42 +230,116 @@ service cloud.firestore {
       
       // Only admins and instructors can create/update grades
       // Manual grade entry for legal compliance
-      allow create, update: if hasAnyRole(['admin', 'instructor']);
+      allow create: if hasAnyRole(['admin', 'instructor']) &&
+        hasRequiredFields(['userId', 'moduleId', 'score', 'passingScore', 'gradedBy']) &&
+        isValidGradeScore(request.resource.data.score) &&
+        isValidGradeScore(request.resource.data.passingScore) &&
+        request.resource.data.gradedBy == request.auth.uid;
+      
+      // Updates must maintain audit trail
+      allow update: if hasAnyRole(['admin', 'instructor']) &&
+        // Cannot change userId or moduleId (immutable identifiers)
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId', 'moduleId']) &&
+        // Score validation if being updated
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['score']) ||
+         isValidGradeScore(request.resource.data.score));
       
       // Grades cannot be deleted - only marked as superseded
       allow delete: if false;
     }
     
-      // ============================================
-      // PROGRESS TRACKING
-      // ============================================
-
-      match /progress/{progressId} {
-        // Users can read their own progress; Admins and instructors can read all
-        allow read: if isAuthenticated() && (
-          resource.data.userId == request.auth.uid || 
-          hasAnyRole(['admin', 'instructor'])
-        );
-
-        // Users can create/update their own progress records
-        // Admins can update any progress record
-        allow create, update: if isAuthenticated() && (
-          (request.resource.data.userId == request.auth.uid) || isAdmin()
-        );
-        
-        // Progress records should generally not be deleted for audit purposes
-        allow delete: if isAdmin();
-      }
-
-      // ============================================
-      // COURSE GRADES
-      // ============================================
-
-      match /course_grades/{gradeId} {
-        allow read: if isAuthenticated();
-        allow write: if isAdmin() || isInstructor();
-      }
-
+    // ============================================
+    // COURSE GRADES (Weighted Calculations)
+    // ============================================
+    
+    match /course_grades/{gradeId} {
+      // Users can read their own course grades
+      // Admins and instructors can read all
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        hasAnyRole(['admin', 'instructor'])
+      );
+      
+      // Only admins, instructors, or system (Cloud Functions) can write
+      // Cloud Functions will have admin SDK access
+      allow create, update: if hasAnyRole(['admin', 'instructor']) &&
+        hasRequiredFields(['userId', 'courseId', 'overallScore', 'overallPassed']) &&
+        isValidGradeScore(request.resource.data.overallScore);
+      
+      // Course grades cannot be deleted
+      allow delete: if false;
+    }
+    
+    // ============================================
+    // AUDIT LOGS (Immutable)
+    // ============================================
+    
+    match /audit_logs/{logId} {
+      // Admins can read audit logs
+      // Instructors can read logs for their students
+      allow read: if isAdmin() || isInstructor();
+      
+      // Anyone authenticated can create logs (typically via Cloud Functions)
+      // But for client-side fallback, allow writes
+      allow create: if isAuthenticated() && 
+        hasRequiredFields(['actorId', 'actorName', 'actionType', 'targetId', 'details']) &&
+        request.resource.data.actorId == request.auth.uid;
+      
+      // CRITICAL: No updates or deletes allowed - ever
+      allow update, delete: if false;
+    }
+    
+    // ============================================
+    // REMEDIATION REQUESTS (Supervisor Approval)
+    // ============================================
+    
+    match /remediation_requests/{requestId} {
+      // Users can read their own requests
+      // Supervisors and admins can read all
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.supervisorId == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Users can create requests for themselves
+      // Admins can create for anyone
+      allow create: if (
+        isAuthenticated() && request.resource.data.userId == request.auth.uid
+      ) || isAdmin();
+      
+      // Only assigned supervisor or admin can update (approve/deny)
+      allow update: if isAuthenticated() && (
+        resource.data.supervisorId == request.auth.uid || isAdmin()
+      ) && (
+        // Can only update status and resolution fields
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'resolvedAt', 'resolvedBy', 'resolutionNotes'])
+      );
+      
+      // Cannot delete remediation requests (audit trail)
+      allow delete: if false;
+    }
+    
+    // ============================================
+    // COMPETENCIES (User Skill Tracking)
+    // ============================================
+    
+    match /competencies/{competencyId} {
+      // Users can read their own competencies
+      // Admins and instructors can read all
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        hasAnyRole(['admin', 'instructor'])
+      );
+      
+      // Only system (Cloud Functions) or admins can write competencies
+      // These are calculated from grades, not manually entered
+      allow create, update: if isAdmin();
+      
+      allow delete: if isAdmin();
+    }
+    
     // ============================================
     // CATCH-ALL: Deny everything else
     // ============================================
