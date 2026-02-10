@@ -2,7 +2,7 @@
 // USER & AUTHENTICATION
 // ============================================
 
-export type UserRoleType = 'admin' | 'instructor' | 'staff' | 'content_author';
+export type UserRoleType = "admin" | "instructor" | "staff" | "content_author";
 
 export interface User {
   uid: string;
@@ -19,18 +19,18 @@ export interface User {
 // ============================================
 
 export type BlockType =
-  | 'heading'
-  | 'text'
-  | 'image'
-  | 'video'
-  | 'quiz'
-  | 'checklist'
-  | 'drag_drop'
-  | 'flashcard';
+  | "heading"
+  | "text"
+  | "image"
+  | "video"
+  | "quiz"
+  | "checklist"
+  | "drag_drop"
+  | "flashcard";
 
 export interface TextBlockData {
   content: string;
-  variant?: 'paragraph' | 'callout-info' | 'callout-warning' | 'callout-critical';
+  variant?: "paragraph" | "callout-info" | "callout-warning" | "callout-critical";
 }
 
 export interface HeadingBlockData {
@@ -95,9 +95,9 @@ export interface ContentBlock {
 // COURSE & MODULE HIERARCHY
 // ============================================
 
-export type CourseStatus = 'draft' | 'published' | 'archived';
-export type ModuleStatus = 'draft' | 'published' | 'archived';
-export type CourseCategory = 'hospice' | 'compliance' | 'clinical_skills' | 'onboarding';
+export type CourseStatus = "draft" | "published" | "archived";
+export type ModuleStatus = "draft" | "published" | "archived";
+export type CourseCategory = "hospice" | "compliance" | "clinical_skills" | "onboarding";
 
 export interface Module {
   id: string;
@@ -109,45 +109,45 @@ export interface Module {
   estimatedMinutes: number;
   order?: number;
   blocks: ContentBlock[];
-  weight: number;           // 0-100, represents % of total course grade
-  isCritical: boolean;      // If true, student MUST pass to pass course
+  weight: number; // 0-100, represents % of total course grade
+  isCritical: boolean; // If true, student MUST pass to pass course
 }
 
 export interface ModuleScore {
   moduleId: string;
   moduleTitle: string;
-  score: number | null;          // null if not yet graded
-  weight: number;                // Weight in course calculation (0-100)
-  weightedScore: number | null;  // score * (weight/100), null if not graded
+  score: number | null; // null if not yet graded
+  weight: number; // Weight in course calculation (0-100)
+  weightedScore: number | null; // score * (weight/100), null if not graded
   isCritical: boolean;
-  passed: boolean | null;        // null if not yet graded
+  passed: boolean | null; // null if not yet graded
   passingScore: number;
 }
 
 export interface CourseGradeCalculation {
   courseId: string;
   userId: string;
-  
+
   // Overall metrics
-  overallScore: number;              // Weighted average (0-100)
-  overallPassed: boolean;            // true if meets all criteria
-  
+  overallScore: number; // Weighted average (0-100)
+  overallPassed: boolean; // true if meets all criteria
+
   // Critical module tracking
   totalCriticalModules: number;
   criticalModulesPassed: number;
   allCriticalModulesPassed: boolean;
-  
+
   // Module-level detail
   moduleBreakdown: ModuleScore[];
-  
+
   // Completion tracking
   totalModules: number;
-  gradedModules: number;             // How many have grades
-  completionPercent: number;         // (gradedModules / totalModules) * 100
-  
+  gradedModules: number; // How many have grades
+  completionPercent: number; // (gradedModules / totalModules) * 100
+
   // Metadata
   calculatedAt: string;
-  isComplete: boolean;               // true if all modules graded
+  isComplete: boolean; // true if all modules graded
 }
 
 export interface CourseGradeDoc {
@@ -163,21 +163,21 @@ export interface CourseGradeDoc {
   gradedModules: number;
   completionPercent: number;
   isComplete: boolean;
-  calculatedAt: any;  // Firestore Timestamp
-  updatedAt: any;     // Firestore Timestamp
+  calculatedAt: any; // Firestore Timestamp
+  updatedAt: any; // Firestore Timestamp
 }
 
 export interface WeightedGradingConfig {
   courseId: string;
-  
+
   // Validation rules
-  requireAllCriticalPassed: boolean;  // Default: true
-  minimumOverallScore: number;        // Default: 70
-  
+  requireAllCriticalPassed: boolean; // Default: true
+  minimumOverallScore: number; // Default: 70
+
   // Attempt limits
-  maxAttemptsPerModule: number;       // Default: 3
-  allowRemediationRetry: boolean;     // Default: true
-  
+  maxAttemptsPerModule: number; // Default: 3
+  allowRemediationRetry: boolean; // Default: true
+
   createdBy: string;
   updatedAt: string;
 }
@@ -198,24 +198,24 @@ export interface Course {
 // ============================================
 
 export type AuditActionType =
-  | 'USER_LOGIN'
-  | 'USER_LOGOUT'
-  | 'COURSE_CREATE'
-  | 'COURSE_UPDATE'
-  | 'COURSE_DELETE'
-  | 'COURSE_PUBLISH'
-  | 'MODULE_CREATE'
-  | 'MODULE_UPDATE'
-  | 'MODULE_DELETE'
-  | 'BLOCK_CREATE'
-  | 'BLOCK_UPDATE'
-  | 'BLOCK_DELETE'
-  | 'GRADE_ENTRY'
-  | 'GRADE_CHANGE'
-  | 'ENROLLMENT_CREATE'
-  | 'ENROLLMENT_UPDATE'
-  | 'ASSESSMENT_SUBMIT'
-  | 'ASSESSMENT_GRADE';
+  | "USER_LOGIN"
+  | "USER_LOGOUT"
+  | "COURSE_CREATE"
+  | "COURSE_UPDATE"
+  | "COURSE_DELETE"
+  | "COURSE_PUBLISH"
+  | "MODULE_CREATE"
+  | "MODULE_UPDATE"
+  | "MODULE_DELETE"
+  | "BLOCK_CREATE"
+  | "BLOCK_UPDATE"
+  | "BLOCK_DELETE"
+  | "GRADE_ENTRY"
+  | "GRADE_CHANGE"
+  | "ENROLLMENT_CREATE"
+  | "ENROLLMENT_UPDATE"
+  | "ASSESSMENT_SUBMIT"
+  | "ASSESSMENT_GRADE";
 
 export interface AuditLog {
   id: string;
@@ -232,8 +232,8 @@ export interface AuditLog {
 // ENROLLMENT & PROGRESS
 // ============================================
 
-export type EnrollmentStatus = 'not_started' | 'in_progress' | 'completed' | 'failed';
-export type CompetencyLevel = 'not_competent' | 'developing' | 'competent' | 'mastery';
+export type EnrollmentStatus = "not_started" | "in_progress" | "completed" | "failed";
+export type CompetencyLevel = "not_competent" | "developing" | "competent" | "mastery";
 
 export interface Enrollment {
   id: string;

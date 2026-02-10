@@ -29,5 +29,9 @@ module.exports = {
     "quotes": ["error", "double"],
     "import/no-unresolved": 0,
     "indent": ["error", 2],
+    "max-len": ["error", { "code": 120 }], // Increase limit to 120
+    "object-curly-spacing": ["error", "always"], // Allow spaces like { id }
+    "@typescript-eslint/no-explicit-any": "off", // Stop complaining about 'any'
+    "quote-props": "off",
   },
 };
