@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Course } from '../functions/src/types';
 import { getCourses, createCourse } from '../services/courseService';
 import { useAuth } from '../contexts/AuthContext';
+import { auth } from '../services/firebase';
 
 interface UseCoursesReturn {
   courses: Course[];
@@ -41,8 +42,13 @@ export const useCourses = (): UseCoursesReturn => {
       setIsLoading(false);
     }
   }, []);
-
+  
   useEffect(() => {
+    if (auth.currentUser) {
+      auth.currentUser.getIdTokenResult().then(result => {
+        console.log('TOKEN CLAIMS:', result.claims);
+      });
+    }
     fetchCourses();
   }, [fetchCourses]);
 

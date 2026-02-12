@@ -489,3 +489,73 @@ export const calculateCourseGrade = onCall(async (request) => {
     throw new HttpsError("internal", "Calculation failed");
   }
 });
+
+// ============================================
+// FUNCTION: Set User Role (Custom Claims)
+// ============================================
+
+/**
+ * Sets custom claims (role) on a Firebase Auth user.
+ * Only callable by admins. Bootstrap the first admin
+ * by temporarily allowing any authenticated user, then
+ * restrict to admins only.
+ *
+ * Usage from client:
+ *   const setRole = httpsCallable(functions, 'setUserRole');
+ *   await setRole({ targetUid: 'abc123', role: 'admin' });
+ */
+export const setUserRole = onCall(async (request) => {
+  // Must be authenticated
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Authentication required.");
+  }
+
+  const { targetUid, role } = request.data;
+
+  // Validate inputs
+  if (!targetUid || typeof targetUid !== "string") {
+    throw new HttpsError("invalid-argument", "targetUid is required.");
+  }
+
+  const validRoles = ["admin", "instructor", "content_author", "staff"];
+  if (!role || !validRoles.includes(role)) {
+    throw new HttpsError(
+      "invalid-argument",
+      `Invalid role. Must be one of: ${validRoles.join(", ")}`
+    );
+  }
+
+  // BOOTSTRAP MODE: For the very first admin setup, comment out
+  // the admin check below. After your first admin is set, uncomment it.
+  //
+  // if (request.auth.token.role !== "admin") {
+  //   throw new HttpsError("permission-denied", "Only admins can set roles.");
+  // }
+
+  try {
+    // Set the custom claim
+    await admin.auth().setCustomUserClaims(targetUid, { role });
+
+    // Also update the Firestore user document to keep in sync
+    await db.collection("users").doc(targetUid).set(
+      { role, updatedAt: admin.firestore.Timestamp.now() },
+      { merge: true }
+    );
+
+    // Audit log
+    await createAuditLog(
+      request.auth.uid,
+      request.auth.token.name || "Unknown",
+      "USER_ROLE_CHANGE",
+      targetUid,
+      `Role set to "${role}" for user ${targetUid}`,
+      { previousRole: "unknown", newRole: role }
+    );
+
+    logger.info(`Role "${role}" set for user ${targetUid}`);
+    return { success: true, uid: targetUid, role };
+  } catch (error) {
+    logger.error("Failed to set user role:", error);
+    throw new HttpsError("internal", "Failed to set user role.");
+  }
+});

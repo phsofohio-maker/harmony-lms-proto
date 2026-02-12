@@ -215,7 +215,7 @@ import {
       title: module.title,
       description: module.description,
       estimatedMinutes: module.estimatedMinutes,
-      order: module.order,
+      order: module.order ?? 0,
       status: module.status,
       passingScore: module.passingScore || 70,
       

@@ -82,6 +82,7 @@ export const useCourseGrade = (
   
   // Auto-load on mount if enabled
   useEffect(() => {
+    if (!user) return;
     if (autoLoad && targetUserId && courseId) {
       loadGrade(false);
     }
