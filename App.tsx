@@ -16,10 +16,15 @@ import { AuditLogs } from './pages/AuditLogs';
 import { CourseCatalog } from './pages/CourseCatalog';
 import { CourseDetail } from './pages/CourseDetail';
 import { CoursePlayer } from './pages/CoursePlayer';
+import { UserManagement } from './pages/UserManagement';
+import { CourseManager } from './pages/CourseManager';
+import { MyGrades } from './pages/MyGrades';
+import { GradeManagement } from './pages/GradeManagement';
+import { Invitations } from './pages/Invitations';
+//import { auditService } from './services/auditService';
 import { Button } from './components/ui/Button';
 import { Loader2, AlertCircle } from 'lucide-react';
-
-import { WeightedGradingTestPanel } from './scripts/weightedGradingVerification';
+import { QuestionTypeVerificationPanel } from './scripts/questionTypeVerification';
 
 const LoadingScreen: React.FC = () => (
   <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -134,10 +139,10 @@ const AppContent: React.FC = () => {
         );
         
       case '/audit':
-        return <AuditLogs />;
+        return <QuestionTypeVerificationPanel />;
         
-      default:
-        return <Dashboard user={user} onNavigate={handleNavigate} />;
+      case 'verify-questions':
+        return <QuestionTypeVerificationPanel />;
     }
   };
 

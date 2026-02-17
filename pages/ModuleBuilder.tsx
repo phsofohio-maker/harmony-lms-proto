@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from 'react';
-import { BlockType } from '../types';
+import { BlockType } from '../functions/src/types';
 import { useModule } from '../hooks/useModule';
 import { Button } from '../components/ui/Button';
 import { BlockEditor } from '../components/builder/BlockEditor';

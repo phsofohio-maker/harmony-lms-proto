@@ -1,14 +1,20 @@
 /**
  * Authentication Context
- * 
- * Provides auth state and operations to the entire app.
+ *
+ * Provides auth state, role, and operations to the entire app.
  * Wrap your App component with <AuthProvider> and consume via useAuth().
- * 
+ *
+ * KEY DESIGN DECISION:
+ * The `role` exposed here comes from Firebase Auth JWT custom claims,
+ * NOT the Firestore user document. This is intentional — Firestore
+ * security rules evaluate against token claims, so the client query
+ * logic must use the same source of truth to build compliant queries.
+ *
  * @module contexts/AuthContext
  */
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
-import { User, UserRoleType } from '../types';
+import { User, UserRoleType } from '../functions/src/types';
 import {
   loginWithEmail,
   logout as authLogout,
@@ -16,10 +22,12 @@ import {
   getUserProfile,
   AuthServiceError,
 } from '../services/authService';
+import { auth } from '../services/firebase';
 
 // Auth state shape
 interface AuthState {
   user: User | null;
+  role: UserRoleType | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
@@ -36,7 +44,8 @@ interface AuthContextValue extends AuthState {
 // Initial state
 const initialState: AuthState = {
   user: null,
-  isLoading: true, // Start true to prevent flash of login screen
+  role: null,
+  isLoading: true,
   isAuthenticated: false,
   error: null,
 };
@@ -57,20 +66,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const unsubscribe = subscribeToAuthState(async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          // User is signed in—fetch their profile
+          // 1. Force-refresh token to get latest custom claims
+          const tokenResult = await firebaseUser.getIdTokenResult(true);
+          const claimsRole = (tokenResult.claims.role as UserRoleType) || null;
+
+          // 2. Fetch Firestore profile for display data
           const profile = await getUserProfile(firebaseUser.uid);
-          
+
           if (profile) {
+            // Warn if claims and profile are out of sync (diagnostic only)
+            if (claimsRole && profile.role !== claimsRole) {
+              console.warn(
+                `Role mismatch: token claims="${claimsRole}", Firestore="${profile.role}". ` +
+                `Security rules use token claims. Run setUserRole to sync.`
+              );
+            }
+
             setState({
               user: profile,
+              role: claimsRole || profile.role, // Claims are authoritative; fallback to profile
               isLoading: false,
               isAuthenticated: true,
               error: null,
             });
           } else {
-            // Auth exists but no profile—unusual state
+            // Auth exists but no profile
             setState({
               user: null,
+              role: null,
               isLoading: false,
               isAuthenticated: false,
               error: 'User profile not found. Contact administrator.',
@@ -79,6 +102,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } catch (err) {
           setState({
             user: null,
+            role: null,
             isLoading: false,
             isAuthenticated: false,
             error: 'Failed to load user profile.',
@@ -87,48 +111,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         // No user signed in
         setState({
-          user: null,
+          ...initialState,
           isLoading: false,
-          isAuthenticated: false,
-          error: null,
         });
       }
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
   // Login handler
   const login = useCallback(async (email: string, password: string) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
-    
+
     try {
       const user = await loginWithEmail(email, password);
+
+      // Get claims from the now-signed-in user
+      const currentUser = auth.currentUser;
+      let claimsRole: UserRoleType | null = null;
+
+      if (currentUser) {
+        const tokenResult = await currentUser.getIdTokenResult(true);
+        claimsRole = (tokenResult.claims.role as UserRoleType) || null;
+      }
+
       setState({
         user,
+        role: claimsRole || user.role,
         isLoading: false,
         isAuthenticated: true,
         error: null,
       });
     } catch (err) {
-      const message = err instanceof AuthServiceError 
-        ? err.message 
+      const message = err instanceof AuthServiceError
+        ? err.message
         : 'An unexpected error occurred.';
-      
+
       setState(prev => ({
         ...prev,
         isLoading: false,
         error: message,
       }));
-      throw err; // Re-throw so UI can handle if needed
+      throw err;
     }
   }, []);
 
   // Logout handler
   const logout = useCallback(async () => {
     setState(prev => ({ ...prev, isLoading: true }));
-    
+
     try {
       await authLogout();
       // State will be updated by onAuthStateChanged listener
@@ -146,14 +178,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setState(prev => ({ ...prev, error: null }));
   }, []);
 
-  // Role check helper
+  // Role check helper — uses the claims-derived role
   const hasRole = useCallback((roles: UserRoleType | UserRoleType[]) => {
-    if (!state.user) return false;
+    if (!state.role) return false;
     const roleArray = Array.isArray(roles) ? roles : [roles];
-    return roleArray.includes(state.user.role);
-  }, [state.user]);
+    return roleArray.includes(state.role);
+  }, [state.role]);
 
-  // Memoize context value to prevent unnecessary re-renders
+  // Memoize context value
   const value = useMemo<AuthContextValue>(() => ({
     ...state,
     login,
@@ -172,34 +204,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 // Hook for consuming auth context
 export const useAuth = (): AuthContextValue => {
   const context = useContext(AuthContext);
-  
+
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  
+
   return context;
 };
 
-// Higher-order component for role-based access (optional utility)
+// Higher-order component for role-based access
 export const withAuth = <P extends object>(
   Component: React.ComponentType<P>,
   allowedRoles?: UserRoleType[]
 ): React.FC<P> => {
   return function AuthenticatedComponent(props: P) {
     const { isAuthenticated, hasRole, isLoading } = useAuth();
-    
-    if (isLoading) {
-      return null; // Or loading spinner
-    }
-    
-    if (!isAuthenticated) {
-      return null; // Or redirect to login
-    }
-    
-    if (allowedRoles && !hasRole(allowedRoles)) {
-      return null; // Or "Access Denied" component
-    }
-    
+
+    if (isLoading) return null;
+    if (!isAuthenticated) return null;
+    if (allowedRoles && !hasRole(allowedRoles)) return null;
+
     return <Component {...props} />;
   };
 };

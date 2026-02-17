@@ -9,7 +9,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { auditService } from '../services/auditService';
-import { AuditLog } from '../types';
+import { AuditLog } from '../functions/src/types';
 import { formatDate } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';

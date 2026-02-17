@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Module, QuizBlockData, ContentBlock } from '../types';
+import { Module, QuizBlockData, ContentBlock } from '../functions/src/types';
 import { BlockRenderer } from '../components/player/BlockRenderer';
 import { Button } from '../components/ui/Button';
 import { 
@@ -24,12 +24,14 @@ import {
   BookOpen
 } from 'lucide-react';
 import { cn } from '../utils';
+import { gradeQuiz } from '../utils/gradeCalculation';
 
 // Hooks
 import { useEnrollment } from '../hooks/useUserEnrollments';
 import { useModuleProgress } from '../hooks/useModuleProgress';
 import { useMyGrade } from '../hooks/useGrade';
 import { useAuth } from '../contexts/AuthContext';
+import { QuizQuestion } from '../functions/src/types'; // Ensure QuizQuestion is imported
 
 // Services for module fetching
 import { getModuleWithBlocks } from '../services/courseService';
@@ -53,7 +55,7 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
   const [moduleError, setModuleError] = useState<string | null>(null);
   
   // Quiz answers (local state until submission)
-  const [answers, setAnswers] = useState<Record<string, number[]>>({});
+  const [answers, setAnswers] = useState<Record<string, any[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Hooks for persistent data
@@ -106,14 +108,38 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
   }, [courseId, moduleId]);
 
   // Handle quiz answer selection
-  const handleQuizAnswer = (blockId: string, questionIndex: number, optionIndex: number) => {
-    if (isPassed) return; // Freeze if already passed
-    
+  const handleQuizAnswer = (blockId: string, questionIndex: number, answer: any) => {
+    if (isPassed) return;
     setAnswers(prev => {
       const blockAnswers = prev[blockId] ? [...prev[blockId]] : [];
-      blockAnswers[questionIndex] = optionIndex;
+      blockAnswers[questionIndex] = answer;
       return { ...prev, [blockId]: blockAnswers };
     });
+  };
+
+  // PHASE C: Step 3 - Per-type validation logic
+  const isQuestionAnswered = (q: QuizQuestion, answer: any): boolean => {
+    if (answer === undefined || answer === null) return false;
+
+    switch (q.type) {
+      case 'matching':
+        // Ensure it's an array matching the length of pairs and all slots are filled
+        return Array.isArray(answer) 
+          && answer.length === (q.matchingPairs?.length ?? 0)
+          && answer.every(v => v !== undefined && v !== '');
+      
+      case 'short-answer':
+        // Minimum 20 characters for clinical reflections
+        return typeof answer === 'string' && answer.trim().length >= 20;
+      
+      case 'fill-blank':
+        return typeof answer === 'string' && answer.trim().length > 0;
+      
+      case 'multiple-choice':
+      case 'true-false':
+      default:
+        return answer !== undefined && answer !== '';
+    }
   };
 
   // Mark a content block as viewed/completed
@@ -125,26 +151,17 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
   };
 
   // Calculate quiz score
-  const calculateQuizScore = (quizBlock: ContentBlock): { score: number; passed: boolean } => {
+  const calculateQuizScore = (quizBlock: ContentBlock) => {
     const quiz = quizBlock.data as QuizBlockData;
     const blockAnswers = answers[quizBlock.id] || [];
-    
-    let correct = 0;
-    quiz.questions.forEach((q, idx) => {
-      if (blockAnswers[idx] === q.correctAnswer) {
-        correct++;
-      }
-    });
-    
-    const score = quiz.questions.length > 0 
-      ? Math.round((correct / quiz.questions.length) * 100)
-      : 0;
-      
-    return { 
-      score, 
-      passed: score >= (quiz.passingScore || moduleData?.passingScore || 80) 
+    const result = gradeQuiz(quiz.questions, blockAnswers, quiz.passingScore);
+    const passingScore = quiz.passingScore || moduleData?.passingScore || 80;
+    return {
+      score: result.score,
+      passed: result.score >= passingScore,
+      needsReview: result.needsReview,
     };
-  };
+  };  
 
   // Submit module (process all quizzes)
   const handleSubmit = async () => {
@@ -179,12 +196,12 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
     }
   };
 
-  // Check if all quiz questions are answered
+  // PHASE C: Step 3 - Updated "allQuestionsAnswered" using the new helper
   const allQuestionsAnswered = moduleData?.blocks.every(block => {
     if (block.type !== 'quiz') return true;
     const quiz = block.data as QuizBlockData;
     const blockAnswers = answers[block.id] || [];
-    return quiz.questions.every((_, idx) => blockAnswers[idx] !== undefined);
+    return quiz.questions.every((q, idx) => isQuestionAnswered(q, blockAnswers[idx]));
   }) ?? false;
 
   // Calculate overall quiz result for display

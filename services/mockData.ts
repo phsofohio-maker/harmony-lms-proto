@@ -1,4 +1,4 @@
-import { Course, User, AuditLog } from '../types';
+import { Course, User, AuditLog } from '../functions/src/types';
 
 export const MOCK_USERS: User[] = [
   {

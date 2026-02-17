@@ -53,9 +53,11 @@ export interface VideoBlockData {
 
 export interface QuizQuestion {
   id: string;
+  type: QuizQuestionType;
   question: string;
   options: string[];
-  correctAnswer: number;
+  correctAnswer: number | string | string[];  // WIDENED from `number`
+  matchingPairs?: MatchingPair[];    // NEW (used when type === 'matching')
   points: number;
   explanation?: string;
 }
@@ -232,8 +234,15 @@ export interface AuditLog {
 // ENROLLMENT & PROGRESS
 // ============================================
 
-export type EnrollmentStatus = "not_started" | "in_progress" | "completed" | "failed";
-export type CompetencyLevel = "not_competent" | "developing" | "competent" | "mastery";
+export type EnrollmentStatus = "not_started" 
+| "in_progress" 
+| "completed" 
+| "failed"   
+| "needs_review";
+export type CompetencyLevel = "not_competent" 
+| "developing" 
+| "competent" 
+| "mastery";
 
 export interface Enrollment {
   id: string;
@@ -243,6 +252,9 @@ export interface Enrollment {
   status: EnrollmentStatus;
   enrolledAt?: string;
   completedAt?: string;
+  quizAnswers?: Record<string, any[]>; // For manual review
+  lastAccessedAt: string;
+  score?: number;
 }
 
 export interface ModuleProgress {
@@ -264,3 +276,24 @@ export interface Grade {
   notes?: string;
 }
 
+// Quiz Question Block Data
+export type QuizQuestionType = 
+  | 'multiple-choice' 
+  | 'true-false' 
+  | 'matching' 
+  | 'fill-blank' 
+  | 'short-answer';
+
+  export interface MatchingPair {
+    left: string;
+    right: string;
+  }
+  
+  export interface Invitation {
+    id: string;
+    email: string;
+    role: UserRoleType;
+    department?: string;
+    sentAt: string;
+    status: 'pending' | 'expired' | 'accepted';
+  }

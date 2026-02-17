@@ -1,17 +1,24 @@
 /**
  * useCourses Hook
- * 
+ *
  * Provides course listing with loading and error states.
- * Respects Firestore security rules based on user role.
- * 
+ * Builds role-aware queries to satisfy Firestore security rules.
+ *
+ * KEY INSIGHT (Firestore "rules are not filters"):
+ * Security rules reject entire queries if ANY document in the result
+ * set would be unauthorized. Non-admin/instructor users can only read
+ * published courses, so we MUST add a where() clause — not rely on
+ * rules to filter.
+ *
  * @module hooks/useCourses
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { db } from '../services/firebase';
 import { Course } from '../functions/src/types';
-import { getCourses, createCourse } from '../services/courseService';
+import { createCourse } from '../services/courseService';
 import { useAuth } from '../contexts/AuthContext';
-import { auth } from '../services/firebase';
 
 interface UseCoursesReturn {
   courses: Course[];
@@ -21,18 +28,53 @@ interface UseCoursesReturn {
   addCourse: (course: Omit<Course, 'id' | 'modules'>) => Promise<string | null>;
 }
 
+/** Roles that can view draft courses per firestore.rules canAuthorContent() */
+const AUTHOR_ROLES = ['admin', 'instructor'];
+
 export const useCourses = (): UseCoursesReturn => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Prevent double-fetch in React strict mode
+  const fetchInFlight = useRef(false);
+
+  /**
+   * Builds a role-aware Firestore query.
+   * - Admin/Instructor: all courses (no status filter)
+   * - Everyone else: published only (satisfies security rules)
+   */
   const fetchCourses = useCallback(async () => {
+    if (!user || !role) return; // Wait for auth to resolve
+    if (fetchInFlight.current) return;
+
+    fetchInFlight.current = true;
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      const data = await getCourses();
+      const coursesRef = collection(db, 'courses');
+
+      const canViewDrafts = AUTHOR_ROLES.includes(role);
+
+      const q = canViewDrafts
+        ? query(coursesRef, orderBy('title'))
+        : query(coursesRef, where('status', '==', 'published'), orderBy('title'));
+
+      const snapshot = await getDocs(q);
+
+      const data: Course[] = snapshot.docs.map(doc => ({
+        id: doc.id,
+        title: doc.data().title || '',
+        description: doc.data().description || '',
+        category: doc.data().category || 'compliance',
+        ceCredits: doc.data().ceCredits || 0,
+        thumbnailUrl: doc.data().thumbnailUrl || '',
+        status: doc.data().status || 'draft',
+        modules: [],
+      }));
+
       setCourses(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load courses';
@@ -40,16 +82,15 @@ export const useCourses = (): UseCoursesReturn => {
       console.error('useCourses fetch error:', err);
     } finally {
       setIsLoading(false);
+      fetchInFlight.current = false;
     }
-  }, []);
-  
+  }, [user, role]);
+
+  // Fetch when user/role stabilizes — single execution
   useEffect(() => {
-    if (auth.currentUser) {
-      auth.currentUser.getIdTokenResult().then(result => {
-        console.log('TOKEN CLAIMS:', result.claims);
-      });
+    if (user && role) {
+      fetchCourses();
     }
-    fetchCourses();
   }, [fetchCourses]);
 
   const addCourse = useCallback(async (
@@ -59,10 +100,10 @@ export const useCourses = (): UseCoursesReturn => {
       setError('Must be logged in to create courses');
       return null;
     }
-    
+
     try {
       const id = await createCourse(course, user.uid, user.displayName);
-      await fetchCourses(); // Refresh list
+      await fetchCourses();
       return id;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create course';

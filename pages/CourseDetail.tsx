@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Course, Module } from '../types';
+import { Course, Module } from '../functions/src/types';
 import { Button } from '../components/ui/Button';
 import { 
   ArrowLeft, 

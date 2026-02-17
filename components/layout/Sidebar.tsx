@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, UserRoleType } from '../../types';
+import { User, UserRoleType } from '../../functions/src/types';
 import { 
   BookOpen, 
   LayoutDashboard, 
@@ -7,7 +7,8 @@ import {
   Users, 
   LogOut, 
   FileEdit,
-  Stethoscope
+  Stethoscope,
+  TestTubes
 } from 'lucide-react';
 import { cn } from '../../utils';
 
@@ -59,6 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, currentPath, onNavigate,
              <NavItem path="/builder" icon={FileEdit} label="Content Builder" />
              <NavItem path="/users" icon={Users} label="User Management" />
              <NavItem path="/audit" icon={ShieldCheck} label="Audit Logs" />
+             <NavItem path="/verify-questions" icon={TestTubes} label="Verification Panel" />
           </div>
         )}
       </div>

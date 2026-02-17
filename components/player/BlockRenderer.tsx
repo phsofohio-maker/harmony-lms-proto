@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ContentBlock, TextBlockData, VideoBlockData, ImageBlockData, QuizBlockData } from '../../types';
+import { ContentBlock, TextBlockData, VideoBlockData, ImageBlockData, QuizBlockData } from '../../functions/src/types';
 import { cn } from '../../utils';
 import { Info, AlertTriangle, AlertOctagon, FileText, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
 

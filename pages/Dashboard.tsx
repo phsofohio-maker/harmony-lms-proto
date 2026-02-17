@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { User } from '../types';
+import { User } from '../functions/src/types';
 import { useCourses } from '../hooks/useCourses';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
