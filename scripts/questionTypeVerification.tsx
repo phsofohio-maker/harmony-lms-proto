@@ -33,7 +33,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-
+import { enterGrade } from '../services/gradeService';
 // ============================================
 // TYPE DEFINITIONS
 // (Mirrors the unified types from Phase A)
@@ -570,6 +570,18 @@ export const QuestionTypeVerificationPanel: React.FC = () => {
 
       // 7c: Record quiz attempt with mixed question types
       const quizResult = gradeQuiz(TEST_QUESTIONS, CORRECT_ANSWERS, PASSING_SCORE);
+      
+      await enterGrade(
+        user.uid,          // userId — must match auth.uid
+        testCourseId,
+        testModuleId,
+        quizResult.score,  // the score from the quiz attempt
+        70,                // passing threshold
+        user.uid,          // gradedBy — the admin running the verification
+        user.displayName || 'Verification Runner',
+        'Automated verification run'
+      );
+
       await recordQuizAttempt(
         userId, testCourseId, testModuleId,
         'quiz-block-qtype', quizResult.score, quizResult.passed,

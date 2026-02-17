@@ -33,10 +33,37 @@ import {
 } from '../functions/src/types';
 import { auditService } from './auditService';
 import { getModules } from './courseService';
-import { getCurrentGrade, type GradeRecord } from './gradeService';
+import { getCurrentGrade } from './gradeService';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 // Firestore collection
 const COURSE_GRADES_COLLECTION = 'course_grades';
+
+// ============================================
+// CLOUD FUNCTION CALLABLE
+// ============================================
+
+/**
+ * Invokes the server-side calculateCourseGrade Cloud Function.
+ * Use this when you need a trusted, server-authoritative grade calculation
+ * (e.g., for final transcript generation or compliance reporting).
+ * 
+ * The local calculateCourseGrade() is used for real-time UI previews.
+ * This callable is used for persisted, audited official calculations.
+ */
+export const calculateCourseGradeViaFunction = async (
+  userId: string,
+  courseId: string,
+): Promise<{ overallScore: number; overallPassed: boolean; calculatedAt: string }> => {
+  const functions = getFunctions();
+  const callable = httpsCallable<
+    { userId: string; courseId: string },
+    { overallScore: number; overallPassed: boolean; calculatedAt: string }
+  >(functions, 'calculateCourseGrade');
+
+  const result = await callable({ userId, courseId });
+  return result.data;
+};
 
 // ============================================
 // HELPER FUNCTIONS
@@ -73,18 +100,24 @@ const docToCourseGrade = (doc: any): CourseGradeCalculation => ({
 // ============================================
 
 /**
- * Validates that module weights sum to 100
- * Throws error if validation fails
+ * Validates that module weights sum to 100.
+ * 
+ * Returns a warning string instead of throwing, so partially-configured
+ * courses (e.g., under construction) can still produce a preview calculation.
+ * Callers that require strict validation (final grade persistence) should
+ * check the return value and reject if non-null.
  */
-const validateModuleWeights = (modules: Module[]): void => {
+const validateModuleWeights = (modules: Module[]): string | null => {
   const totalWeight = modules.reduce((sum, m) => sum + (m.weight || 0), 0);
-  
+
   if (Math.abs(totalWeight - 100) > 0.01) {
-    throw new Error(
-      `Module weights must sum to 100. Current total: ${totalWeight}. ` +
-      `Check course configuration.`
+    return (
+      `Module weights sum to ${totalWeight}, not 100. ` +
+      `Grade calculation will be proportional but not authoritative. ` +
+      `Fix module weights before publishing.`
     );
   }
+  return null;
 };
 
 // ============================================
@@ -107,7 +140,7 @@ const validateModuleWeights = (modules: Module[]): void => {
 export const calculateCourseGrade = async (
   userId: string,
   courseId: string
-): Promise<CourseGradeCalculation> => {
+): Promise<CourseGradeCalculation & { weightWarning?: string }> => {
   // Fetch all modules for this course
   const modules = await getModules(courseId);
   
@@ -115,8 +148,11 @@ export const calculateCourseGrade = async (
     throw new Error(`No modules found for course ${courseId}`);
   }
   
-  // Validate weights
-  validateModuleWeights(modules);
+  // Validate weights — warn but do not throw; allows preview on in-progress courses
+  const weightWarning = validateModuleWeights(modules);
+  if (weightWarning) {
+    console.warn(`[courseGradeService] ${weightWarning}`);
+  }
   
   // Build module breakdown with grades
   const moduleBreakdown: ModuleScore[] = [];
@@ -188,6 +224,7 @@ export const calculateCourseGrade = async (
     completionPercent,
     isComplete,
     calculatedAt: new Date().toISOString(),
+    ...(weightWarning ? { weightWarning } : {}),
   };
 };
 
@@ -206,6 +243,14 @@ export const calculateAndSaveCourseGrade = async (
   actorName: string
 ): Promise<CourseGradeCalculation> => {
   const calculation = await calculateCourseGrade(userId, courseId);
+
+  // Hard stop: do not persist a grade calculated from misconfigured weights.
+  // Preview calculations are fine; official records are not.
+  if (calculation.weightWarning) {
+    throw new Error(
+      `Cannot persist course grade: ${calculation.weightWarning}`
+    );
+  }
   
   const docId = getCourseGradeId(userId, courseId);
   const docRef = doc(db, COURSE_GRADES_COLLECTION, docId);

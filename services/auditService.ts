@@ -106,6 +106,11 @@ class AuditService {
     try {
       const logRef = doc(db, AUDIT_COLLECTION, logId);
       
+      const sanitizeForFirestore = (obj: Record<string, any>): Record<string, any> => {
+        return Object.fromEntries(
+          Object.entries(obj).filter(([, v]) => v !== undefined)
+        );
+      };
       const firestoreLog: FirestoreAuditLog = {
         actorId,
         actorName,
@@ -113,7 +118,7 @@ class AuditService {
         targetId,
         details,
         timestamp: serverTimestamp(),
-        metadata,
+        ...(metadata !== undefined && { metadata: sanitizeForFirestore(metadata) }),
       };
       
       await setDoc(logRef, firestoreLog);

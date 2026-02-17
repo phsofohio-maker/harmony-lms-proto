@@ -10,7 +10,7 @@
  * 3. Can update progress
  * 4. Audit logs are created
  */
-
+import { useAuth } from '../contexts/AuthContext';
 import {
     createEnrollment,
     getUserEnrollments,
@@ -20,7 +20,8 @@ import {
   } from '../services/enrollmentService';
   
   // Test configuration - use real IDs from your Firestore
-  const TEST_USER_ID = 'test-user-001';
+  const { user } = useAuth();
+  const TEST_USER_ID = user.uid;
   const TEST_COURSE_ID = 'test-course-001';
   const ACTOR_ID = 'admin-001';
   const ACTOR_NAME = 'Test Admin';
@@ -102,7 +103,8 @@ import {
       
       try {
         // Simplified inline test
-        const testUserId = `test-${Date.now()}`;
+        const { user } = useAuth();
+        const testUserId = user.uid;
         const testCourseId = 'demo-course';
         
         setResults(prev => [...prev, 'Creating enrollment...']);

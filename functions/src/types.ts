@@ -19,18 +19,21 @@ export interface User {
 // ============================================
 
 export type BlockType =
-  | "heading"
-  | "text"
-  | "image"
-  | "video"
-  | "quiz"
-  | "checklist"
-  | "drag_drop"
-  | "flashcard";
+| "heading"
+| "text"
+| "image"
+| "video"
+| "quiz"
+| "checklist"
+| "drag_drop"
+| "flashcard";
 
 export interface TextBlockData {
-  content: string;
-  variant?: "paragraph" | "callout-info" | "callout-warning" | "callout-critical";
+content: string;
+variant?: "paragraph"
+| "callout-info"
+| "callout-warning"
+| "callout-critical";
 }
 
 export interface HeadingBlockData {
@@ -39,58 +42,58 @@ export interface HeadingBlockData {
 }
 
 export interface ImageBlockData {
-  url: string;
-  caption?: string;
-  altText?: string;
+url: string;
+caption?: string;
+altText?: string;
 }
 
 export interface VideoBlockData {
-  url: string;
-  title: string;
-  duration: number; // seconds
-  transcript?: string;
+url: string;
+title: string;
+duration: number; // seconds
+transcript?: string;
 }
 
 export interface QuizQuestion {
-  id: string;
-  type: QuizQuestionType;
-  question: string;
-  options: string[];
-  correctAnswer: number | string | string[];  // WIDENED from `number`
-  matchingPairs?: MatchingPair[];    // NEW (used when type === 'matching')
-  points: number;
-  explanation?: string;
+id: string;
+type: QuizQuestionType;
+question: string;
+options: string[];
+correctAnswer: number | string | string[];
+matchingPairs?: MatchingPair[];
+points: number;
+explanation?: string;
 }
 
 export interface QuizBlockData {
-  title: string;
-  questions: QuizQuestion[];
-  passingScore: number;
-  maxAttempts?: number;
+title: string;
+questions: QuizQuestion[];
+passingScore: number;
+maxAttempts?: number;
 }
 
 export interface ChecklistBlockData {
-  title: string;
-  items: { id: string; label: string; required: boolean }[];
+title: string;
+items: { id: string; label: string; required: boolean }[];
 }
 
 // Union type for all block data
 export type AnyBlockData =
-  | TextBlockData
-  | HeadingBlockData
-  | ImageBlockData
-  | VideoBlockData
-  | QuizBlockData
-  | ChecklistBlockData
-  | Record<string, any>;
+| TextBlockData
+| HeadingBlockData
+| ImageBlockData
+| VideoBlockData
+| QuizBlockData
+| ChecklistBlockData
+| Record<string, any>;
 
 export interface ContentBlock {
-  id: string;
-  moduleId: string;
-  type: BlockType;
-  order: number;
-  required: boolean;
-  data: AnyBlockData;
+id: string;
+moduleId: string;
+type: BlockType;
+order: number;
+required: boolean;
+data: AnyBlockData;
 }
 
 // ============================================
@@ -111,16 +114,16 @@ export interface Module {
   estimatedMinutes: number;
   order?: number;
   blocks: ContentBlock[];
-  weight: number; // 0-100, represents % of total course grade
-  isCritical: boolean; // If true, student MUST pass to pass course
+  weight: number;
+  isCritical: boolean;
 }
 
 export interface ModuleScore {
   moduleId: string;
   moduleTitle: string;
-  score: number | null; // null if not yet graded
-  weight: number; // Weight in course calculation (0-100)
-  weightedScore: number | null; // score * (weight/100), null if not graded
+  score: number | null;
+  weight: number;
+  weightedScore: number | null;
   isCritical: boolean;
   passed: boolean | null; // null if not yet graded
   passingScore: number;
@@ -234,66 +237,65 @@ export interface AuditLog {
 // ENROLLMENT & PROGRESS
 // ============================================
 
-export type EnrollmentStatus = "not_started" 
-| "in_progress" 
-| "completed" 
-| "failed"   
+export type EnrollmentStatus = "not_started"
+| "in_progress"
+| "completed"
+| "failed"
 | "needs_review";
-export type CompetencyLevel = "not_competent" 
-| "developing" 
-| "competent" 
+export type CompetencyLevel = "not_competent"
+| "developing"
+| "competent"
 | "mastery";
 
 export interface Enrollment {
-  id: string;
-  userId: string;
-  courseId: string;
-  progress: number; // 0-100
-  status: EnrollmentStatus;
-  enrolledAt?: string;
-  completedAt?: string;
-  quizAnswers?: Record<string, any[]>; // For manual review
-  lastAccessedAt: string;
-  score?: number;
+id: string;
+userId: string;
+courseId: string;
+progress: number;
+status: EnrollmentStatus;
+enrolledAt?: string;
+completedAt?: string;
+quizAnswers?: Record<string, any[]>;
+lastAccessedAt: string;
+score?: number;
 }
 
 export interface ModuleProgress {
-  moduleId: string;
-  completed: boolean;
-  score?: number;
-  attempts: number;
-  lastAttemptAt?: string;
+moduleId: string;
+completed: boolean;
+score?: number;
+attempts: number;
+lastAttemptAt?: string;
 }
 
 export interface Grade {
-  id: string;
-  userId: string;
-  moduleId: string;
-  score: number;
-  passed: boolean;
-  gradedBy: string; // UID of grader (manual entry)
-  gradedAt: string;
-  notes?: string;
+id: string;
+userId: string;
+moduleId: string;
+score: number;
+passed: boolean;
+gradedBy: string; // UID of grader (manual entry)
+gradedAt: string;
+notes?: string;
 }
 
-// Quiz Question Block Data
-export type QuizQuestionType = 
-  | 'multiple-choice' 
-  | 'true-false' 
-  | 'matching' 
-  | 'fill-blank' 
-  | 'short-answer';
+export type QuizQuestionType =
+| "multiple-choice"
+| "true-false"
+| "matching"
+| "fill-blank"
+| "short-answer";
 
-  export interface MatchingPair {
-    left: string;
-    right: string;
-  }
-  
-  export interface Invitation {
-    id: string;
-    email: string;
-    role: UserRoleType;
-    department?: string;
-    sentAt: string;
-    status: 'pending' | 'expired' | 'accepted';
-  }
+export interface MatchingPair {
+left: string;
+right: string;
+}
+
+export interface Invitation {
+id: string;
+email: string;
+role: UserRoleType;
+department?: string;
+sentAt: string;
+status: "pending" | "expired" | "accepted";
+}

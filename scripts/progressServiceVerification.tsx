@@ -8,7 +8,7 @@
  * 4. Can record quiz attempts with scores
  * 5. Audit logs are created
  */
-
+import { useAuth } from '../contexts/AuthContext';
 import React, { useState } from 'react';
 import {
   initializeModuleProgress,
@@ -17,7 +17,7 @@ import {
   recordQuizAttempt,
   getCourseProgress,
 } from '../services/progressService';
-
+const { user } = useAuth();
 export const ProgressTestPanel: React.FC = () => {
   const [results, setResults] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
@@ -29,7 +29,8 @@ export const ProgressTestPanel: React.FC = () => {
     setResults(['Running progress service tests...', '']);
     
     // Use unique IDs for this test run
-    const testUserId = `test-user-${Date.now()}`;
+    
+    const testUserId = user.uid
     const testCourseId = 'test-course-001';
     const testModuleId = `test-module-${Date.now()}`;
     const totalBlocks = 4; // Simulating a module with 4 required blocks
