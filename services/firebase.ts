@@ -54,12 +54,13 @@ const initializeFirebase = (): void => {
   storage = getStorage(app);
   
   // Connect to emulators in development
-  if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true') {
+  if ((import.meta as any).env.DEV && (import.meta as any).env.VITE_USE_EMULATORS === 'true') {
+    // ... inside remains the same
     console.log('%c🔧 Connecting to Firebase Emulators', 'color: #f59e0b; font-weight: bold;');
     connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
     connectFirestoreEmulator(db, 'localhost', 8080);
     connectStorageEmulator(storage, 'localhost', 9199);
-  }
+}
   
   console.log('%c✓ Firebase initialized', 'color: #22c55e; font-weight: bold;');
 };

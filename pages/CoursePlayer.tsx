@@ -24,7 +24,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import { cn } from '../utils';
-import { gradeQuiz } from '../utils/gradeCalculation';
+import { gradeQuestion , gradeQuiz } from '../utils/gradeCalculation';
 
 // Hooks
 import { useEnrollment } from '../hooks/useUserEnrollments';

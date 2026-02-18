@@ -50,9 +50,12 @@ export const MOCK_COURSES: Course[] = [
             required: true,
             data: { content: 'Hospice care focuses on the quality of life for people and their caregivers who are experiencing an advanced, life-limiting illness.' }
           }
-        ]
+        ],
+        weight: 0,
+        isCritical: false
       }
-    ]
+    ],
+    estimatedHours: 0
   },
   {
     id: 'c_002',
@@ -61,6 +64,7 @@ export const MOCK_COURSES: Course[] = [
     category: 'compliance',
     ceCredits: 1.0,
     thumbnailUrl: 'https://picsum.photos/400/200?random=2',
-    modules: []
+    modules: [],
+    estimatedHours: 0
   }
 ];

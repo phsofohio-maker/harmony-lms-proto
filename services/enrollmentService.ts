@@ -9,6 +9,7 @@
  */
 
 import {
+    deleteField,
     collection,
     doc,
     getDoc,
@@ -21,7 +22,7 @@ import {
     serverTimestamp,
     Timestamp,
   } from 'firebase/firestore';
-  import { db } from './firebase';
+  import { db, } from './firebase';
   import { Enrollment, EnrollmentStatus } from '../functions/src/types';
   import { auditService } from './auditService';
   
@@ -49,6 +50,7 @@ import {
     status: doc.data().status ?? 'not_started',
     enrolledAt: doc.data().enrolledAt?.toDate?.()?.toISOString(),
     completedAt: doc.data().completedAt?.toDate?.()?.toISOString(),
+    lastAccessedAt: ''
   });
   
   // ============================================
@@ -238,7 +240,7 @@ import {
     await updateDoc(docRef, {
       progress: 0,
       status: 'not_started',
-      completedAt: null,
+      completedAt: deleteField(),
       updatedAt: serverTimestamp(),
     });
     

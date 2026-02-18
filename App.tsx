@@ -21,7 +21,7 @@ import { CourseManager } from './pages/CourseManager';
 import { MyGrades } from './pages/MyGrades';
 import { GradeManagement } from './pages/GradeManagement';
 import { Invitations } from './pages/Invitations';
-//import { auditService } from './services/auditService';
+import { auditService } from './services/auditService';
 import { Button } from './components/ui/Button';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { QuestionTypeVerificationPanel } from './scripts/questionTypeVerification';
@@ -139,9 +139,9 @@ const AppContent: React.FC = () => {
         );
         
       case '/audit':
-        return <QuestionTypeVerificationPanel />;
+        return <AuditLogs />;
         
-      case 'verify-questions':
+      case '/verify-questions':
         return <QuestionTypeVerificationPanel />;
     }
   };
