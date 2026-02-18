@@ -1,9 +1,18 @@
 /**
- * App.tsx - Complete Updated Routing
- * 
- * Includes new routes:
- * - /course/:id -> CourseDetail (module selection)
- * - /player -> CoursePlayer (requires courseId + moduleId)
+ * App.tsx - Complete Routing with All Pages
+ *
+ * All routes from the template are now wired:
+ * - /              -> Dashboard
+ * - /courses       -> CourseCatalog
+ * - /my-grades     -> MyGrades
+ * - /course        -> CourseDetail (full-screen, no sidebar)
+ * - /player        -> CoursePlayer (full-screen, no sidebar)
+ * - /curriculum    -> CourseManager (admin)
+ * - /grade-management -> GradeManagement (admin)
+ * - /invitations   -> Invitations (admin)
+ * - /users         -> UserManagement (admin)
+ * - /audit         -> AuditLogs (admin)
+ * - /builder       -> ModuleBuilder (admin, full-screen)
  */
 
 import React, { useState } from 'react';
@@ -21,10 +30,8 @@ import { CourseManager } from './pages/CourseManager';
 import { MyGrades } from './pages/MyGrades';
 import { GradeManagement } from './pages/GradeManagement';
 import { Invitations } from './pages/Invitations';
-import { auditService } from './services/auditService';
 import { Button } from './components/ui/Button';
 import { Loader2, AlertCircle } from 'lucide-react';
-import { QuestionTypeVerificationPanel } from './scripts/questionTypeVerification';
 
 const LoadingScreen: React.FC = () => (
   <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -38,7 +45,7 @@ const LoadingScreen: React.FC = () => (
 const AppContent: React.FC = () => {
   const { user, isLoading, isAuthenticated, logout } = useAuth();
   const [currentPath, setCurrentPath] = useState('/');
-  
+
   // Context for routes that need IDs
   const [routeContext, setRouteContext] = useState<{
     courseId?: string;
@@ -65,7 +72,7 @@ const AppContent: React.FC = () => {
   // ============================================
   // FULL-SCREEN ROUTES (no sidebar)
   // ============================================
-  
+
   // Course Detail Page
   if (currentPath === '/course') {
     if (!routeContext.courseId) {
@@ -81,7 +88,7 @@ const AppContent: React.FC = () => {
         </div>
       );
     }
-    
+
     return (
       <CourseDetail
         courseId={routeContext.courseId}
@@ -90,7 +97,7 @@ const AppContent: React.FC = () => {
       />
     );
   }
-  
+
   // Course Player
   if (currentPath === '/player') {
     if (!routeContext.courseId || !routeContext.moduleId) {
@@ -106,9 +113,9 @@ const AppContent: React.FC = () => {
         </div>
       );
     }
-    
+
     return (
-      <CoursePlayer 
+      <CoursePlayer
         courseId={routeContext.courseId}
         moduleId={routeContext.moduleId}
         onBack={() => setCurrentPath('/course')}
@@ -119,30 +126,49 @@ const AppContent: React.FC = () => {
   // ============================================
   // SIDEBAR ROUTES
   // ============================================
-  
+
   const renderPage = () => {
     switch (currentPath) {
       case '/':
         return <Dashboard user={user} onNavigate={handleNavigate} />;
-        
+
       case '/courses':
         return <CourseCatalog onNavigate={handleNavigate} />;
-        
+
+      case '/my-grades':
+        return <MyGrades />;
+
+      case '/curriculum':
+        return (
+          <CourseManager
+            onNavigate={handleNavigate}
+          />
+        );
+
+      case '/grade-management':
+        return <GradeManagement />;
+
+      case '/invitations':
+        return <Invitations />;
+
+      case '/users':
+        return <UserManagement />;
+
+      case '/audit':
+        return <AuditLogs />;
+
       case '/builder':
         return (
           <ModuleBuilder
             courseId={routeContext.courseId}
             moduleId={routeContext.moduleId}
             userUid={user.uid}
-            onBack={() => setCurrentPath('/')}
+            onBack={() => setCurrentPath('/curriculum')}
           />
         );
-        
-      case '/audit':
-        return <AuditLogs />;
-        
-      case '/verify-questions':
-        return <QuestionTypeVerificationPanel />;
+
+      default:
+        return <Dashboard user={user} onNavigate={handleNavigate} />;
     }
   };
 
@@ -168,16 +194,3 @@ const App: React.FC = () => (
 );
 
 export default App;
-
-// ============================================
-// NAVIGATION PATTERNS
-// ============================================
-
-// From CourseCatalog -> CourseDetail:
-// onNavigate('/course', { courseId: course.id })
-
-// From CourseDetail -> CoursePlayer:
-// onNavigate('/player', { courseId, moduleId })
-
-// From Dashboard -> CourseDetail:
-// onNavigate('/course', { courseId: course.id })

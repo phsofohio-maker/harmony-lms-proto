@@ -73,6 +73,7 @@ export const useCourses = (): UseCoursesReturn => {
         thumbnailUrl: doc.data().thumbnailUrl || '',
         status: doc.data().status || 'draft',
         modules: [],
+        estimatedHours: doc.data().estimatedHours || 0,
       }));
 
       setCourses(data);

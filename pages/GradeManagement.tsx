@@ -125,7 +125,7 @@ export const GradeManagement: React.FC = () => {
 
     try {
       // Query enrollments by status
-      let enrollmentQuery: Query<unknown, DocumentData> | Query<DocumentData, DocumentData>;
+      let enrollmentQuery: Query<DocumentData, DocumentData>;
       if (filter === 'all') {
         enrollmentQuery = query(
           collection(db, 'enrollments'),
@@ -142,7 +142,7 @@ export const GradeManagement: React.FC = () => {
       const enriched: ReviewableSubmission[] = [];
 
       for (const enrollDoc of enrollmentSnap.docs) {
-        const data = enrollDoc.data();
+        const data = enrollDoc.data() as Record<string, any>;
         const enrollment: Enrollment = {
           id: enrollDoc.id,
           userId: data.userId,
