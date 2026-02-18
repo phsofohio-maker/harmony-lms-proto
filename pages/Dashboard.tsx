@@ -8,10 +8,12 @@
  */
 
 import React from 'react';
-import { User } from '../functions/src/types';
+import { User, CourseGradeDoc } from '../functions/src/types';
 import { useCourses } from '../hooks/useCourses';
+import { useUserTranscript } from '../hooks/useCourseGrades';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
+import { GradeSummaryCard } from '../components/grades/GradeSummaryCard';
 import {
   Clock,
   AlertTriangle,
@@ -22,6 +24,7 @@ import {
   BookOpen,
   Plus,
   RefreshCw,
+  GraduationCap,
 } from 'lucide-react';
 import { cn } from '../utils';
 
@@ -33,6 +36,7 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate }) => {
   const { hasRole } = useAuth();
   const { courses, isLoading, error, refetch } = useCourses();
+  const { courseGrades, isLoading: gradesLoading } = useUserTranscript();
 
   const canAuthor = hasRole(['admin', 'content_author']);
 
@@ -88,6 +92,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate }) => {
           </div>
         </div>
       </div>
+
+      {/* Grade Summary Cards */}
+      {courseGrades.length > 0 && (
+        <div className="mb-10">
+          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <GraduationCap className="h-4 w-4 text-brand-500" />
+            Your Course Grades
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {courseGrades.map(grade => {
+              const course = courses.find(c => c.id === grade.courseId);
+              return (
+                <GradeSummaryCard
+                  key={`${grade.userId}_${grade.courseId}`}
+                  courseGrade={grade as unknown as CourseGradeDoc}
+                  courseTitle={course?.title || 'Unknown Course'}
+                  onClick={() => onNavigate('/my-grades')}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Course List Section */}
       <div className="space-y-6">
