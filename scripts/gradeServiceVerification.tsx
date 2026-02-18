@@ -11,6 +11,7 @@
  */
 
 import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import {
   enterGrade,
   getCurrentGrade,
@@ -24,20 +25,27 @@ import {
 export const GradeTestPanel: React.FC = () => {
   const [results, setResults] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
-  
+  const { user } = useAuth();
+
   const log = (msg: string) => setResults(prev => [...prev, msg]);
-  
+
   const runTests = async () => {
     setRunning(true);
     setResults(['Running grade service tests...', '']);
-    
+
+    if (!user) {
+      log('Cannot run tests: must be logged in');
+      setRunning(false);
+      return;
+    }
+
     const testUserId = `student-${Date.now()}`;
     const testCourseId = 'test-course-001';
     const testModuleId = `module-${Date.now()}`;
-    const graderId = 'instructor-001';
-    const graderName = 'Test Instructor';
+    const graderId = user.uid;
+    const graderName = user.displayName ?? 'Test Instructor';
     const passingScore = 80;
-    
+
     try {
       // Test 1: Enter a failing grade
       log('Test 1: Entering a failing grade (65%)...');

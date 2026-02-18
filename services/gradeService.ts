@@ -43,6 +43,7 @@ interface GradeDoc {
   moduleId: string;
   courseId: string;
   score: number;
+  passingScore: number;
   passed: boolean;
   gradedBy: string;
   gradedByName: string;
@@ -185,6 +186,7 @@ export const enterGrade = async (
     moduleId,
     courseId,
     score: clampedScore,
+    passingScore,
     passed,
     gradedBy: graderId,
     gradedByName: graderName,
@@ -249,6 +251,7 @@ export const correctGrade = async (
     moduleId: originalData.moduleId,
     courseId: originalData.courseId,
     score: clampedScore,
+    passingScore,
     passed,
     gradedBy: graderId,
     gradedByName: graderName,
