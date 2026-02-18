@@ -8,13 +8,15 @@
  * @module pages/MyGrades
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Enrollment, Course } from '../functions/src/types';
-import { GraduationCap, Award, FileText, CheckCircle2, Download, Printer, Clock, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Enrollment, Course, CourseGradeCalculation } from '../functions/src/types';
+import { GraduationCap, Award, FileText, CheckCircle2, Download, Printer, Clock, Loader2, AlertCircle, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { GradeBreakdown } from '../components/grades/GradeBreakdown';
 import { formatDate, cn } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserEnrollments } from '../services/enrollmentService';
 import { getCourses } from '../services/courseService';
+import { getSavedCourseGrade } from '../services/courseGradeService';
 
 export const MyGrades: React.FC = () => {
   const { user } = useAuth();
@@ -22,6 +24,8 @@ export const MyGrades: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [courseGrades, setCourseGrades] = useState<Record<string, CourseGradeCalculation>>({});
+  const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -35,6 +39,20 @@ export const MyGrades: React.FC = () => {
       ]);
       setEnrollments(fetchedEnrollments);
       setCourses(fetchedCourses);
+
+      // Fetch course grades for completed enrollments
+      const grades: Record<string, CourseGradeCalculation> = {};
+      for (const enrollment of fetchedEnrollments) {
+        try {
+          const grade = await getSavedCourseGrade(user.uid, enrollment.courseId);
+          if (grade) {
+            grades[enrollment.courseId] = grade;
+          }
+        } catch {
+          // Grade may not exist yet
+        }
+      }
+      setCourseGrades(grades);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load grades';
       setError(msg);
@@ -125,24 +143,42 @@ export const MyGrades: React.FC = () => {
             ) : (
                 completed.map(e => {
                     const c = getCourse(e.courseId);
+                    const grade = courseGrades[e.courseId];
+                    const isExpanded = expandedCourseId === e.courseId;
                     return (
-                        <div key={e.id} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                            <div className="flex items-center gap-4">
-                                <div className="h-10 w-10 bg-green-50 rounded-lg flex items-center justify-center text-green-600">
-                                    <FileText className="h-6 w-6" />
+                        <div key={e.id}>
+                            <div
+                                className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer"
+                                onClick={() => grade && setExpandedCourseId(isExpanded ? null : e.courseId)}
+                            >
+                                <div className="flex items-center gap-4">
+                                    {grade ? (
+                                        isExpanded
+                                            ? <ChevronDown className="h-5 w-5 text-brand-500 shrink-0" />
+                                            : <ChevronRight className="h-5 w-5 text-slate-400 shrink-0" />
+                                    ) : (
+                                        <div className="h-10 w-10 bg-green-50 rounded-lg flex items-center justify-center text-green-600">
+                                            <FileText className="h-6 w-6" />
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="font-bold text-slate-900">{c?.title || 'Unknown Course'}</p>
+                                        <p className="text-xs text-slate-500">Earned: {e.completedAt ? formatDate(e.completedAt) : e.lastAccessedAt ? formatDate(e.lastAccessedAt) : 'N/A'} - {c?.ceCredits || 0} CE Credits</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-bold text-slate-900">{c?.title || 'Unknown Course'}</p>
-                                    <p className="text-xs text-slate-500">Earned: {e.completedAt ? formatDate(e.completedAt) : e.lastAccessedAt ? formatDate(e.lastAccessedAt) : 'N/A'} - {c?.ceCredits || 0} CE Credits</p>
+                                <div className="flex items-center gap-4">
+                                    <div className="text-right">
+                                        <p className="text-xs font-bold text-slate-400 uppercase mb-1">Grade</p>
+                                        <p className="text-sm font-bold text-green-600">{grade ? `${grade.overallScore}%` : e.score !== undefined ? `${e.score}%` : 'Pass'}</p>
+                                    </div>
+                                    <Button variant="ghost" size="sm" className="text-brand-600">Certificate</Button>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <div className="text-right">
-                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Grade</p>
-                                    <p className="text-sm font-bold text-green-600">{e.score !== undefined ? `${e.score}%` : 'Pass'}</p>
+                            {isExpanded && grade && (
+                                <div className="px-6 pb-6">
+                                    <GradeBreakdown calculation={grade} />
                                 </div>
-                                <Button variant="ghost" size="sm" className="text-brand-600">Certificate</Button>
-                            </div>
+                            )}
                         </div>
                     );
                 })
