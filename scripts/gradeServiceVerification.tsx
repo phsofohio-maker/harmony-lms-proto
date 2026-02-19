@@ -9,7 +9,6 @@
  * 5. Competency levels calculate correctly
  * 6. Comprehensive audit logs created
  */
-import { useAuth } from '../contexts/AuthContext';
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -39,8 +38,7 @@ export const GradeTestPanel: React.FC = () => {
       return;
     }
 
-    const testUserId = `student-${Date.now()}`;
-  const { user } = useAuth();
+  const testUserId = `student-${Date.now()}`;
   const runTests = async () => {
     setRunning(true);
     setResults(['Running grade service tests...', '']);
@@ -197,3 +195,4 @@ export const GradeTestPanel: React.FC = () => {
     </div>
   );
 };
+}
