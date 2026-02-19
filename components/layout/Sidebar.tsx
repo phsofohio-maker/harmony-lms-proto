@@ -1,14 +1,17 @@
 import React from 'react';
 import { User, UserRoleType } from '../../functions/src/types';
-import { 
-  BookOpen, 
-  LayoutDashboard, 
-  ShieldCheck, 
-  Users, 
-  LogOut, 
-  FileEdit,
+import {
+  BookOpen,
+  LayoutDashboard,
+  ShieldCheck,
+  Users,
+  LogOut,
   Stethoscope,
-  TestTubes
+  Layers,
+  GraduationCap,
+  ClipboardCheck,
+  UserPlus,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '../../utils';
 
@@ -27,8 +30,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, currentPath, onNavigate,
       onClick={() => onNavigate(path)}
       className={cn(
         "flex w-full items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
-        currentPath === path 
-          ? "bg-brand-50 text-brand-700" 
+        currentPath === path
+          ? "bg-brand-50 text-brand-700"
           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
       )}
     >
@@ -52,15 +55,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, currentPath, onNavigate,
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Platform</p>
             <NavItem path="/" icon={LayoutDashboard} label="Dashboard" />
             <NavItem path="/courses" icon={BookOpen} label="Course Catalog" />
+            <NavItem path="/my-grades" icon={GraduationCap} label="My Grades" />
         </div>
 
-        {user.role === 'admin' && (
+        {(user.role === 'admin' || user.role === 'instructor') && (
           <div className="mb-4 px-3">
-             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Admin</p>
-             <NavItem path="/builder" icon={FileEdit} label="Content Builder" />
-             <NavItem path="/users" icon={Users} label="User Management" />
-             <NavItem path="/audit" icon={ShieldCheck} label="Audit Logs" />
-             <NavItem path="/verify-questions" icon={TestTubes} label="Verification Panel" />
+             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Management</p>
+             <NavItem path="/curriculum" icon={Layers} label="Course Manager" />
+             <NavItem path="/grade-management" icon={ClipboardCheck} label="Grade Center" />
+             <NavItem path="/remediation" icon={AlertTriangle} label="Remediation" />
+             <NavItem path="/invitations" icon={UserPlus} label="Invite Staff" />
+             <NavItem path="/users" icon={Users} label="Staff Directory" />
+             <NavItem path="/audit" icon={ShieldCheck} label="Audit Trail" />
           </div>
         )}
       </div>
@@ -72,12 +78,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, currentPath, onNavigate,
           </div>
           <div className="flex-1 overflow-hidden">
             <p className="text-sm font-medium text-slate-900 truncate">{user.displayName}</p>
-            <p className="text-xs text-slate-500 truncate capitalize">{user.role}</p>
+            <p className="text-xs text-slate-500 truncate capitalize font-semibold">{user.role}</p>
           </div>
         </div>
-        <button 
+        <button
           onClick={onLogout}
-          className="flex w-full items-center gap-2 text-slate-500 hover:text-critical-600 text-sm px-1 transition-colors"
+          className="flex w-full items-center gap-2 text-slate-400 hover:text-critical-600 text-sm px-1 transition-colors"
         >
           <LogOut className="h-4 w-4" />
           Sign Out

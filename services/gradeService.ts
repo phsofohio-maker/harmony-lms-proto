@@ -251,7 +251,7 @@ export const correctGrade = async (
     moduleId: originalData.moduleId,
     courseId: originalData.courseId,
     score: clampedScore,
-    passingScore,
+    passingScore,   
     passed,
     gradedBy: graderId,
     gradedByName: graderName,

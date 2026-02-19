@@ -46,7 +46,8 @@ import {
     ceCredits: doc.data().ceCredits || 0,
     thumbnailUrl: doc.data().thumbnailUrl || '',
     status: doc.data().status || 'draft',
-    modules: [], // Loaded separately
+    modules: [],
+    estimatedHours: 0
   });
   
   /**

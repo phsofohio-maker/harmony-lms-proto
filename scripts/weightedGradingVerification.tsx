@@ -70,6 +70,8 @@ export const WeightedGradingTestPanel: React.FC = () => {
         category: 'Testing',
         estimatedHours: 2,
         status: 'published',
+        ceCredits: 0,
+        thumbnailUrl: ''
       },
       TEST_USER_ID,
       user!.displayName || 'Test User'
@@ -182,6 +184,8 @@ export const WeightedGradingTestPanel: React.FC = () => {
         category: 'Testing',
         estimatedHours: 1,
         status: 'published',
+        ceCredits: 0,
+        thumbnailUrl: ''
       },
       TEST_USER_ID,
       user!.displayName || 'Test User'
@@ -260,6 +264,8 @@ export const WeightedGradingTestPanel: React.FC = () => {
         category: 'Testing',
         estimatedHours: 1,
         status: 'published',
+        ceCredits: 0,
+        thumbnailUrl: ''
       },
       TEST_USER_ID,
       user!.displayName || 'Test User'

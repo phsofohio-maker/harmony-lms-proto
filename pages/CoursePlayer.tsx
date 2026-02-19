@@ -24,7 +24,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import { cn } from '../utils';
-import { gradeQuiz } from '../utils/gradeCalculation';
+import { gradeQuestion , gradeQuiz } from '../utils/gradeCalculation';
 
 // Hooks
 import { useEnrollment } from '../hooks/useUserEnrollments';
@@ -33,8 +33,11 @@ import { useMyGrade } from '../hooks/useGrade';
 import { useAuth } from '../contexts/AuthContext';
 import { QuizQuestion } from '../functions/src/types'; // Ensure QuizQuestion is imported
 
-// Services for module fetching
+// Services for module fetching and enrollment updates
 import { getModuleWithBlocks } from '../services/courseService';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../services/firebase';
+import { auditService } from '../services/auditService';
 
 interface CoursePlayerProps {
   courseId: string;
@@ -166,20 +169,22 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
   // Submit module (process all quizzes)
   const handleSubmit = async () => {
     if (!moduleData || !user) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const requiredBlocks = moduleData.blocks.filter(b => b.required).length;
-      
+      let anyNeedsReview = false;
+
       // Process each quiz block
       for (const block of moduleData.blocks) {
         if (block.type === 'quiz') {
-          const { score, passed } = calculateQuizScore(block);
+          const { score, passed, needsReview } = calculateQuizScore(block);
+          if (needsReview) anyNeedsReview = true;
           await submitQuiz(block.id, score, passed, requiredBlocks);
         }
       }
-      
+
       // Mark non-quiz blocks as complete
       for (const block of moduleData.blocks) {
         if (block.type !== 'quiz' && block.required) {
@@ -188,6 +193,32 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
             await completeBlock(block.id, requiredBlocks);
           }
         }
+      }
+
+      // If any quiz has short-answer questions requiring review,
+      // set enrollment to needs_review and persist quiz answers
+      if (anyNeedsReview && enrollment) {
+        const enrollmentRef = doc(db, 'enrollments', enrollment.id);
+        await updateDoc(enrollmentRef, {
+          status: 'needs_review',
+          quizAnswers: answers,
+          updatedAt: serverTimestamp(),
+        });
+
+        await auditService.logToFirestore(
+          user.uid,
+          user.displayName || 'Learner',
+          'ASSESSMENT_SUBMIT',
+          enrollment.id,
+          `Module ${moduleData.title} submitted for instructor review (contains short-answer questions)`
+        );
+      } else if (enrollment) {
+        // Auto-graded only — persist answers for record-keeping
+        const enrollmentRef = doc(db, 'enrollments', enrollment.id);
+        await updateDoc(enrollmentRef, {
+          quizAnswers: answers,
+          updatedAt: serverTimestamp(),
+        });
       }
     } catch (err) {
       console.error('Submit error:', err);

@@ -549,8 +549,8 @@ export const QuestionTypeVerificationPanel: React.FC = () => {
       const userName = user.displayName || 'Verification User';
 
       // 7a: Create enrollment
-      await createEnrollment(userId, testCourseId, userId, userName);
-      const enrollment = await getEnrollment(userId, testCourseId);
+      await createEnrollment(user.uid, testCourseId, user.uid, userName);
+      const enrollment = await getEnrollment(user.uid, testCourseId);
       assertions.push(assert(
         '7a. Enrollment created successfully',
         enrollment !== null && enrollment?.status === 'not_started',
@@ -559,8 +559,8 @@ export const QuestionTypeVerificationPanel: React.FC = () => {
       ));
 
       // 7b: Initialize progress
-      await initializeModuleProgress(userId, testCourseId, testModuleId);
-      let progress = await getModuleProgress(userId, testModuleId);
+      await initializeModuleProgress(user.uid, testCourseId, testModuleId);
+      let progress = await getModuleProgress(user.uid, testModuleId);
       assertions.push(assert(
         '7b. Progress initialized at 0%',
         progress !== null && progress?.overallProgress === 0,
@@ -583,12 +583,12 @@ export const QuestionTypeVerificationPanel: React.FC = () => {
       );
 
       await recordQuizAttempt(
-        userId, testCourseId, testModuleId,
+        user.uid, testCourseId, testModuleId,
         'quiz-block-qtype', quizResult.score, quizResult.passed,
         1, // totalBlocks = 1 (just the quiz)
-        userId, userName
+        user.uid, userName
       );
-      progress = await getModuleProgress(userId, testModuleId);
+      progress = await getModuleProgress(user.uid, testModuleId);
       assertions.push(assert(
         '7c. Quiz attempt recorded, progress updated',
         progress !== null && (progress?.overallProgress ?? 0) > 0,
@@ -598,9 +598,9 @@ export const QuestionTypeVerificationPanel: React.FC = () => {
 
       // 7d: Enter grade through gradeService
       const gradeRecord = await enterGrade(
-        userId, testCourseId, testModuleId,
+        user.uid, testCourseId, testModuleId,
         quizResult.score, PASSING_SCORE,
-        userId, userName,
+        user.uid, userName,
         `Verification: ${quizResult.score}% with ${quizResult.results.filter(r => r.needsManualReview).length} items pending review`
       );
       assertions.push(assert(
@@ -611,7 +611,7 @@ export const QuestionTypeVerificationPanel: React.FC = () => {
       ));
 
       // 7e: Verify grade retrieval
-      const retrieved = await getCurrentGrade(userId, testModuleId);
+      const retrieved = await getCurrentGrade(user.uid, testModuleId);
       assertions.push(assert(
         '7e. Grade retrievable via getCurrentGrade',
         retrieved !== null && retrieved?.score === quizResult.score,

@@ -29,6 +29,7 @@ import {
   QuizQuestion,
   ContentBlock,
   Module,
+  Course,
 } from '../functions/src/types';
 import {
   ClipboardCheck,
@@ -44,8 +45,10 @@ import {
   User,
   FileText,
   MessageSquare,
+  Users,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { CourseRoster } from '../components/grades/CourseRoster';
 import { cn, formatDate } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -61,7 +64,8 @@ import {
   correctGrade,
   getCurrentGrade,
 } from '../services/gradeService';
-import { getModuleWithBlocks } from '../services/courseService';
+import { getModuleWithBlocks, getCourses } from '../services/courseService';
+import { calculateAndSaveCourseGrade } from '../services/courseGradeService';
 import { auditService } from '../services/auditService';
 
 // Firestore direct access for the needs_review query
@@ -84,6 +88,7 @@ interface ReviewableSubmission {
 }
 
 type FilterStatus = 'needs_review' | 'completed' | 'all';
+type ViewMode = 'review_queue' | 'course_roster';
 
 // ============================================
 // COMPONENT
@@ -97,6 +102,11 @@ export const GradeManagement: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterStatus>('needs_review');
+
+  // View mode: review queue vs course roster
+  const [viewMode, setViewMode] = useState<ViewMode>('review_queue');
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
   // Review modal state
   const [reviewingSubmission, setReviewingSubmission] = useState<ReviewableSubmission | null>(null);
@@ -125,7 +135,7 @@ export const GradeManagement: React.FC = () => {
 
     try {
       // Query enrollments by status
-      let enrollmentQuery: Query<unknown, DocumentData> | Query<DocumentData, DocumentData>;
+      let enrollmentQuery: Query<DocumentData, DocumentData>;
       if (filter === 'all') {
         enrollmentQuery = query(
           collection(db, 'enrollments'),
@@ -142,7 +152,7 @@ export const GradeManagement: React.FC = () => {
       const enriched: ReviewableSubmission[] = [];
 
       for (const enrollDoc of enrollmentSnap.docs) {
-        const data = enrollDoc.data();
+        const data = enrollDoc.data() as Record<string, any>;
         const enrollment: Enrollment = {
           id: enrollDoc.id,
           userId: data.userId,
@@ -171,7 +181,7 @@ export const GradeManagement: React.FC = () => {
           // Non-critical — display with fallback name
         }
 
-        // Resolve course title
+        // Resolve course title and find the module with quiz blocks
         let courseTitle = 'Unknown Course';
         let moduleId = '';
         try {
@@ -181,12 +191,26 @@ export const GradeManagement: React.FC = () => {
           if (!courseDoc.empty) {
             courseTitle = courseDoc.docs[0].data().title || 'Untitled Course';
           }
-          // Get the first module for this course (for quiz data)
+          // Find the module that contains quiz blocks (prioritize modules with short-answer)
           const modulesSnap = await getDocs(
             collection(db, `courses/${data.courseId}/modules`)
           );
           if (!modulesSnap.empty) {
-            moduleId = modulesSnap.docs[0].id;
+            // Try to find a module with quiz blocks first
+            for (const modDoc of modulesSnap.docs) {
+              const blocksSnap = await getDocs(
+                collection(db, `courses/${data.courseId}/modules/${modDoc.id}/blocks`)
+              );
+              const hasQuiz = blocksSnap.docs.some(b => b.data().type === 'quiz');
+              if (hasQuiz) {
+                moduleId = modDoc.id;
+                break;
+              }
+            }
+            // Fallback to first module if no quiz blocks found
+            if (!moduleId) {
+              moduleId = modulesSnap.docs[0].id;
+            }
           }
         } catch {
           // Non-critical
@@ -216,6 +240,22 @@ export const GradeManagement: React.FC = () => {
   useEffect(() => {
     fetchSubmissions();
   }, [fetchSubmissions]);
+
+  // Fetch courses for the roster view
+  useEffect(() => {
+    const loadCourses = async () => {
+      try {
+        const fetchedCourses = await getCourses();
+        setCourses(fetchedCourses);
+        if (fetchedCourses.length > 0 && !selectedCourseId) {
+          setSelectedCourseId(fetchedCourses[0].id);
+        }
+      } catch {
+        // Non-critical for review queue
+      }
+    };
+    loadCourses();
+  }, []);
 
   // ============================================
   // REVIEW MODAL ACTIONS
@@ -290,7 +330,20 @@ export const GradeManagement: React.FC = () => {
         updatedAt: serverTimestamp(),
       });
 
-      // 3. Audit the review action specifically
+      // 3. Trigger course grade recalculation (Cloud Function 6 equivalent)
+      try {
+        await calculateAndSaveCourseGrade(
+          enrollment.userId,
+          courseId,
+          user.uid,
+          user.displayName || 'Instructor'
+        );
+      } catch (gradeCalcErr) {
+        // Non-blocking: grade entry succeeded, recalculation can be retried
+        console.warn('Course grade recalculation failed (non-blocking):', gradeCalcErr);
+      }
+
+      // 4. Audit the review action specifically
       await auditService.logToFirestore(
         user.uid,
         user.displayName || 'Instructor',
@@ -301,7 +354,7 @@ export const GradeManagement: React.FC = () => {
         (reviewNotes ? `Notes: ${reviewNotes}` : 'No additional notes.')
       );
 
-      // 4. Close modal and refresh
+      // 5. Close modal and refresh
       setReviewingSubmission(null);
       await fetchSubmissions();
 
@@ -720,7 +773,7 @@ export const GradeManagement: React.FC = () => {
       {renderReviewModal()}
 
       {/* Page Header */}
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex justify-between items-end mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <ClipboardCheck className="h-6 w-6 text-brand-600" />
@@ -728,44 +781,105 @@ export const GradeManagement: React.FC = () => {
           </h1>
           <p className="text-slate-500 mt-1">Review clinical assessments and verify staff competencies.</p>
         </div>
-
-        <div className="flex items-center gap-3">
-          {/* Refresh */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchSubmissions}
-            disabled={isLoading}
-            className="gap-1.5"
-          >
-            <RefreshCw className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')} />
-            Refresh
-          </Button>
-
-          {/* Filter tabs */}
-          <div className="flex bg-white border border-slate-200 rounded-lg p-1">
-            {[
-              { key: 'needs_review' as const, label: 'Needs Review' },
-              { key: 'completed' as const, label: 'Verified' },
-              { key: 'all' as const, label: 'All' },
-            ].map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setFilter(tab.key)}
-                className={cn(
-                  'px-4 py-1.5 text-xs font-bold rounded-md transition-all',
-                  filter === tab.key
-                    ? 'bg-brand-600 text-white'
-                    : 'text-slate-500 hover:text-brand-600'
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
+      {/* View Mode Tabs */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex bg-white border border-slate-200 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('review_queue')}
+            className={cn(
+              'px-4 py-2 text-sm font-bold rounded-md transition-all flex items-center gap-2',
+              viewMode === 'review_queue'
+                ? 'bg-brand-600 text-white'
+                : 'text-slate-500 hover:text-brand-600'
+            )}
+          >
+            <ClipboardCheck className="h-4 w-4" />
+            Review Queue
+          </button>
+          <button
+            onClick={() => setViewMode('course_roster')}
+            className={cn(
+              'px-4 py-2 text-sm font-bold rounded-md transition-all flex items-center gap-2',
+              viewMode === 'course_roster'
+                ? 'bg-brand-600 text-white'
+                : 'text-slate-500 hover:text-brand-600'
+            )}
+          >
+            <Users className="h-4 w-4" />
+            Course Roster
+          </button>
+        </div>
+
+        {viewMode === 'review_queue' && (
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchSubmissions}
+              disabled={isLoading}
+              className="gap-1.5"
+            >
+              <RefreshCw className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')} />
+              Refresh
+            </Button>
+
+            <div className="flex bg-white border border-slate-200 rounded-lg p-1">
+              {[
+                { key: 'needs_review' as const, label: 'Needs Review' },
+                { key: 'completed' as const, label: 'Verified' },
+                { key: 'all' as const, label: 'All' },
+              ].map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setFilter(tab.key)}
+                  className={cn(
+                    'px-4 py-1.5 text-xs font-bold rounded-md transition-all',
+                    filter === tab.key
+                      ? 'bg-brand-600 text-white'
+                      : 'text-slate-500 hover:text-brand-600'
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {viewMode === 'course_roster' && courses.length > 0 && (
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Course:</label>
+            <select
+              value={selectedCourseId || ''}
+              onChange={(e) => setSelectedCourseId(e.target.value)}
+              className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"
+            >
+              {courses.map(c => (
+                <option key={c.id} value={c.id}>{c.title}</option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Course Roster View */}
+      {viewMode === 'course_roster' && selectedCourseId && (
+        <CourseRoster courseId={selectedCourseId} />
+      )}
+
+      {viewMode === 'course_roster' && !selectedCourseId && (
+        <div className="bg-white rounded-xl border-2 border-dashed border-slate-200 p-12 text-center">
+          <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+          <p className="text-slate-500 font-medium">No courses available</p>
+          <p className="text-sm text-slate-400 mt-1">Create and publish courses to view the roster.</p>
+        </div>
+      )}
+
+      {/* Review Queue View */}
+      {viewMode === 'review_queue' && (
+        <>
       {/* Error State */}
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
@@ -844,6 +958,8 @@ export const GradeManagement: React.FC = () => {
           </tbody>
         </table>
       </div>
+        </>
+      )}
     </div>
   );
 };

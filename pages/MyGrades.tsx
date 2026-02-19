@@ -1,22 +1,85 @@
-
-import React from 'react';
-import { Enrollment, Course, User } from '../functions/src/types';
-// Added Clock to imports
-import { GraduationCap, Award, FileText, CheckCircle2, Download, Printer, Clock } from 'lucide-react';
+/**
+ * My Grades Page - Firestore Integration
+ *
+ * Converted from template's props version to use Firestore.
+ * Fetches the current user's enrollments and resolves course data
+ * to display a personal transcript view.
+ *
+ * @module pages/MyGrades
+ */
+import React, { useState, useEffect, useCallback } from 'react';
+import { Enrollment, Course, CourseGradeCalculation } from '../functions/src/types';
+import { GraduationCap, Award, FileText, CheckCircle2, Download, Printer, Clock, Loader2, AlertCircle, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '../components/ui/Button';
-import { formatDate } from '../utils';
+import { GradeBreakdown } from '../components/grades/GradeBreakdown';
+import { formatDate, cn } from '../utils';
+import { useAuth } from '../contexts/AuthContext';
+import { getUserEnrollments } from '../services/enrollmentService';
+import { getCourses } from '../services/courseService';
+import { getSavedCourseGrade } from '../services/courseGradeService';
 
-interface MyGradesProps {
-  user: User;
-  enrollments: Enrollment[];
-  courses: Course[];
-}
+export const MyGrades: React.FC = () => {
+  const { user } = useAuth();
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [courseGrades, setCourseGrades] = useState<Record<string, CourseGradeCalculation>>({});
+  const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
 
-export const MyGrades: React.FC<MyGradesProps> = ({ user, enrollments, courses }) => {
+  const fetchData = useCallback(async () => {
+    if (!user) return;
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const [fetchedEnrollments, fetchedCourses] = await Promise.all([
+        getUserEnrollments(user.uid),
+        getCourses(),
+      ]);
+      setEnrollments(fetchedEnrollments);
+      setCourses(fetchedCourses);
+
+      // Fetch course grades for completed enrollments
+      const grades: Record<string, CourseGradeCalculation> = {};
+      for (const enrollment of fetchedEnrollments) {
+        try {
+          const grade = await getSavedCourseGrade(user.uid, enrollment.courseId);
+          if (grade) {
+            grades[enrollment.courseId] = grade;
+          }
+        } catch {
+          // Grade may not exist yet
+        }
+      }
+      setCourseGrades(grades);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to load grades';
+      setError(msg);
+      console.error('MyGrades fetch error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  if (!user) return null;
+
   const completed = enrollments.filter(e => e.status === 'completed');
   const inProgress = enrollments.filter(e => e.status === 'in_progress' || e.status === 'needs_review');
 
   const getCourse = (id: string) => courses.find(c => c.id === id);
+
+  if (isLoading) {
+    return (
+      <div className="p-8 max-w-5xl mx-auto flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 text-brand-600 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
@@ -29,6 +92,10 @@ export const MyGrades: React.FC<MyGradesProps> = ({ user, enrollments, courses }
           <p className="text-slate-500 mt-2">Official record of completed training and continuing education units.</p>
         </div>
         <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={fetchData} disabled={isLoading} className="gap-2">
+                <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
+                Refresh
+            </Button>
             <Button variant="outline" size="sm" className="gap-2">
                 <Printer className="h-4 w-4" />
                 Print Transcript
@@ -39,6 +106,14 @@ export const MyGrades: React.FC<MyGradesProps> = ({ user, enrollments, courses }
             </Button>
         </div>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
+          <p className="text-sm font-medium text-red-800">{error}</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div className="bg-brand-600 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
@@ -52,7 +127,7 @@ export const MyGrades: React.FC<MyGradesProps> = ({ user, enrollments, courses }
         </div>
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Compliance Rate</p>
-            <p className="text-3xl font-bold text-slate-900">{user.complianceScore || 100}%</p>
+            <p className="text-3xl font-bold text-slate-900">{enrollments.length > 0 ? Math.round((completed.length / enrollments.length) * 100) : 100}%</p>
         </div>
       </div>
 
@@ -68,24 +143,42 @@ export const MyGrades: React.FC<MyGradesProps> = ({ user, enrollments, courses }
             ) : (
                 completed.map(e => {
                     const c = getCourse(e.courseId);
+                    const grade = courseGrades[e.courseId];
+                    const isExpanded = expandedCourseId === e.courseId;
                     return (
-                        <div key={e.id} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                            <div className="flex items-center gap-4">
-                                <div className="h-10 w-10 bg-green-50 rounded-lg flex items-center justify-center text-green-600">
-                                    <FileText className="h-6 w-6" />
+                        <div key={e.id}>
+                            <div
+                                className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer"
+                                onClick={() => grade && setExpandedCourseId(isExpanded ? null : e.courseId)}
+                            >
+                                <div className="flex items-center gap-4">
+                                    {grade ? (
+                                        isExpanded
+                                            ? <ChevronDown className="h-5 w-5 text-brand-500 shrink-0" />
+                                            : <ChevronRight className="h-5 w-5 text-slate-400 shrink-0" />
+                                    ) : (
+                                        <div className="h-10 w-10 bg-green-50 rounded-lg flex items-center justify-center text-green-600">
+                                            <FileText className="h-6 w-6" />
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="font-bold text-slate-900">{c?.title || 'Unknown Course'}</p>
+                                        <p className="text-xs text-slate-500">Earned: {e.completedAt ? formatDate(e.completedAt) : e.lastAccessedAt ? formatDate(e.lastAccessedAt) : 'N/A'} - {c?.ceCredits || 0} CE Credits</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-bold text-slate-900">{c?.title}</p>
-                                    <p className="text-xs text-slate-500">Earned: {formatDate(e.lastAccessedAt)} • {c?.ceCredits} CE Credits</p>
+                                <div className="flex items-center gap-4">
+                                    <div className="text-right">
+                                        <p className="text-xs font-bold text-slate-400 uppercase mb-1">Grade</p>
+                                        <p className="text-sm font-bold text-green-600">{grade ? `${grade.overallScore}%` : e.score !== undefined ? `${e.score}%` : 'Pass'}</p>
+                                    </div>
+                                    <Button variant="ghost" size="sm" className="text-brand-600">Certificate</Button>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <div className="text-right">
-                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Grade</p>
-                                    <p className="text-sm font-bold text-green-600">{e.score}%</p>
+                            {isExpanded && grade && (
+                                <div className="px-6 pb-6">
+                                    <GradeBreakdown calculation={grade} />
                                 </div>
-                                <Button variant="ghost" size="sm" className="text-brand-600">Certificate</Button>
-                            </div>
+                            )}
                         </div>
                     );
                 })
@@ -108,10 +201,14 @@ export const MyGrades: React.FC<MyGradesProps> = ({ user, enrollments, courses }
                         <div key={e.id} className="bg-white p-5 rounded-xl border border-slate-200 flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden">
-                                    <img src={c?.thumbnailUrl} className="w-full h-full object-cover" />
+                                    {c?.thumbnailUrl ? (
+                                      <img src={c.thumbnailUrl} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <div className="w-full h-full bg-slate-200" />
+                                    )}
                                 </div>
                                 <div>
-                                    <p className="font-bold text-slate-900">{c?.title}</p>
+                                    <p className="font-bold text-slate-900">{c?.title || 'Unknown Course'}</p>
                                     <p className="text-xs text-slate-500">Status: {e.status === 'needs_review' ? 'Awaiting Instructor' : 'In Progress'}</p>
                                 </div>
                             </div>

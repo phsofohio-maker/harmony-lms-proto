@@ -102,7 +102,11 @@ data: AnyBlockData;
 
 export type CourseStatus = "draft" | "published" | "archived";
 export type ModuleStatus = "draft" | "published" | "archived";
-export type CourseCategory = "hospice" | "compliance" | "clinical_skills" | "onboarding";
+export type CourseCategory = "hospice"
+| "compliance"
+| "clinical_skills"
+| "onboarding"
+| "Testing";
 
 export interface Module {
   id: string;
@@ -196,6 +200,7 @@ export interface Course {
   thumbnailUrl: string;
   status?: CourseStatus;
   modules: Module[];
+  estimatedHours: number;
 }
 
 // ============================================
