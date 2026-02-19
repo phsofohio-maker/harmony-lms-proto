@@ -10,7 +10,8 @@ import {
   Layers,
   GraduationCap,
   ClipboardCheck,
-  UserPlus
+  UserPlus,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '../../utils';
 
@@ -57,11 +58,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, currentPath, onNavigate,
             <NavItem path="/my-grades" icon={GraduationCap} label="My Grades" />
         </div>
 
-        {user.role === 'admin' && (
+        {(user.role === 'admin' || user.role === 'instructor') && (
           <div className="mb-4 px-3">
              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Management</p>
              <NavItem path="/curriculum" icon={Layers} label="Course Manager" />
              <NavItem path="/grade-management" icon={ClipboardCheck} label="Grade Center" />
+             <NavItem path="/remediation" icon={AlertTriangle} label="Remediation" />
              <NavItem path="/invitations" icon={UserPlus} label="Invite Staff" />
              <NavItem path="/users" icon={Users} label="Staff Directory" />
              <NavItem path="/audit" icon={ShieldCheck} label="Audit Trail" />

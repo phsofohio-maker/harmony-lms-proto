@@ -12,6 +12,7 @@
  * - /invitations   -> Invitations (admin)
  * - /users         -> UserManagement (admin)
  * - /audit         -> AuditLogs (admin)
+ * - /remediation   -> RemediationQueue (admin/instructor)
  * - /builder       -> ModuleBuilder (admin, full-screen)
  */
 
@@ -30,6 +31,7 @@ import { CourseManager } from './pages/CourseManager';
 import { MyGrades } from './pages/MyGrades';
 import { GradeManagement } from './pages/GradeManagement';
 import { Invitations } from './pages/Invitations';
+import { RemediationQueue } from './pages/RemediationQueue';
 import { Button } from './components/ui/Button';
 import { Loader2, AlertCircle } from 'lucide-react';
 
@@ -147,6 +149,9 @@ const AppContent: React.FC = () => {
 
       case '/grade-management':
         return <GradeManagement />;
+
+      case '/remediation':
+        return <RemediationQueue />;
 
       case '/invitations':
         return <Invitations />;

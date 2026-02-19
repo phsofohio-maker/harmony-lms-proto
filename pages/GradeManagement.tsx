@@ -65,6 +65,7 @@ import {
   getCurrentGrade,
 } from '../services/gradeService';
 import { getModuleWithBlocks, getCourses } from '../services/courseService';
+import { calculateAndSaveCourseGrade } from '../services/courseGradeService';
 import { auditService } from '../services/auditService';
 
 // Firestore direct access for the needs_review query
@@ -180,7 +181,7 @@ export const GradeManagement: React.FC = () => {
           // Non-critical — display with fallback name
         }
 
-        // Resolve course title
+        // Resolve course title and find the module with quiz blocks
         let courseTitle = 'Unknown Course';
         let moduleId = '';
         try {
@@ -190,12 +191,26 @@ export const GradeManagement: React.FC = () => {
           if (!courseDoc.empty) {
             courseTitle = courseDoc.docs[0].data().title || 'Untitled Course';
           }
-          // Get the first module for this course (for quiz data)
+          // Find the module that contains quiz blocks (prioritize modules with short-answer)
           const modulesSnap = await getDocs(
             collection(db, `courses/${data.courseId}/modules`)
           );
           if (!modulesSnap.empty) {
-            moduleId = modulesSnap.docs[0].id;
+            // Try to find a module with quiz blocks first
+            for (const modDoc of modulesSnap.docs) {
+              const blocksSnap = await getDocs(
+                collection(db, `courses/${data.courseId}/modules/${modDoc.id}/blocks`)
+              );
+              const hasQuiz = blocksSnap.docs.some(b => b.data().type === 'quiz');
+              if (hasQuiz) {
+                moduleId = modDoc.id;
+                break;
+              }
+            }
+            // Fallback to first module if no quiz blocks found
+            if (!moduleId) {
+              moduleId = modulesSnap.docs[0].id;
+            }
           }
         } catch {
           // Non-critical
@@ -315,7 +330,20 @@ export const GradeManagement: React.FC = () => {
         updatedAt: serverTimestamp(),
       });
 
-      // 3. Audit the review action specifically
+      // 3. Trigger course grade recalculation (Cloud Function 6 equivalent)
+      try {
+        await calculateAndSaveCourseGrade(
+          enrollment.userId,
+          courseId,
+          user.uid,
+          user.displayName || 'Instructor'
+        );
+      } catch (gradeCalcErr) {
+        // Non-blocking: grade entry succeeded, recalculation can be retried
+        console.warn('Course grade recalculation failed (non-blocking):', gradeCalcErr);
+      }
+
+      // 4. Audit the review action specifically
       await auditService.logToFirestore(
         user.uid,
         user.displayName || 'Instructor',
@@ -326,7 +354,7 @@ export const GradeManagement: React.FC = () => {
         (reviewNotes ? `Notes: ${reviewNotes}` : 'No additional notes.')
       );
 
-      // 4. Close modal and refresh
+      // 5. Close modal and refresh
       setReviewingSubmission(null);
       await fetchSubmissions();
 
