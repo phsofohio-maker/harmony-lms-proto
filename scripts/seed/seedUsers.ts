@@ -12,7 +12,7 @@
  *           service-account.json in project root
  */
 
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 import { SEED_USERS, SeedUser } from './seedData/users';
 import { initAdmin } from './seedAll';
 
@@ -82,7 +82,8 @@ export async function seedUsers(): Promise<CreatedUser[]> {
 }
 
 // Allow running standalone
-if (require.main === module) {
+const isMainUsers = import.meta.url === `file://${process.argv[1]}`;
+if (isMainUsers) {
   initAdmin();
   console.log('=== Seeding Users ===\n');
   seedUsers()
