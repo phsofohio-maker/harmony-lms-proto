@@ -16,9 +16,13 @@
  *   3. Or set GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
  */
 
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 import * as path from 'path';
 import * as fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Initialize Firebase Admin SDK.
@@ -102,10 +106,8 @@ async function main() {
   process.exit(0);
 }
 
-// Only run main if this file is the entry point
-if (require.main === module) {
-  main().catch((err) => {
-    console.error('\nSeed failed:', err);
-    process.exit(1);
-  });
-}
+// Run main when this file is the entry point
+main().catch((err) => {
+  console.error('\nSeed failed:', err);
+  process.exit(1);
+});

@@ -12,7 +12,7 @@
  *           service-account.json in project root
  */
 
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 import {
   COURSE,
   MODULE_1, MODULE_1_BLOCKS,
@@ -135,7 +135,8 @@ export async function seedCourse(adminUid?: string): Promise<SeedCourseResult> {
 }
 
 // Allow running standalone
-if (require.main === module) {
+const isMainCourse = import.meta.url === `file://${process.argv[1]}`;
+if (isMainCourse) {
   initAdmin();
   console.log('=== Seeding Course ===\n');
   seedCourse()
