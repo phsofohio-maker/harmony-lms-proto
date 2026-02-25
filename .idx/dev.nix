@@ -4,24 +4,34 @@
     pkgs.nodejs_20
     pkgs.jdk21
   ];
-  idx.extensions = [
-    "svelte.svelte-vscode"
-    "vue.volar"
-  ];
-  idx.previews = {
+  idx = {
+    extensions = [
+      "svelte.svelte-vscode"
+      "vue.volar"
+    ];
+    workspace = {
+      onCreate = {
+        npm-install = "npm install";
+      };
+      onStart = {
+        npm-install = "npm install";
+      };
+    };
     previews = {
-      web = {
-        command = [
-          "npm"
-          "run"
-          "dev"
-          "--"
-          "--port"
-          "$PORT"
-          "--host"
-          "0.0.0.0"
-        ];
-        manager = "web";
+      previews = {
+        web = {
+          command = [
+            "npm"
+            "run"
+            "dev"
+            "--"
+            "--port"
+            "$PORT"
+            "--host"
+            "0.0.0.0"
+          ];
+          manager = "web";
+        };
       };
     };
   };
