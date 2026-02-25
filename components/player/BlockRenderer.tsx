@@ -5,8 +5,8 @@ import { Info, AlertTriangle, AlertOctagon, FileText, ChevronDown, ChevronUp, Ch
 
 interface BlockRendererProps {
   block: ContentBlock;
-  onQuizAnswer?: (blockId: string, questionIndex: number, optionIndex: number) => void;
-  answers?: Record<string, number[]>; // blockId -> array of selected option indices per question
+  onQuizAnswer?: (blockId: string, questionIndex: number, answer: any) => void;
+  answers?: Record<string, any[]>; // blockId -> array of answers per question (type varies)
 }
 
 export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onQuizAnswer, answers }) => {
@@ -114,43 +114,183 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onQuizAnswe
           </div>
           <div className="p-6 space-y-8">
             {(quizData.questions || []).map((q, qIdx) => (
-              <div key={qIdx} className="space-y-3">
+              <div key={q.id || qIdx} className="space-y-3">
                 <p className="font-medium text-slate-900 text-sm">
                   <span className="text-slate-400 mr-2">{qIdx + 1}.</span>
                   {q.question}
                 </p>
-                <div className="space-y-2 pl-6">
-                  {q.options.map((opt, oIdx) => {
-                    const isSelected = blockAnswers[qIdx] === oIdx;
-                    return (
-                      <label 
-                        key={oIdx} 
-                        className={cn(
-                          "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all",
-                          isSelected 
-                            ? "bg-brand-50 border-brand-500 ring-1 ring-brand-500" 
-                            : "bg-white border-slate-200 hover:border-brand-300 hover:bg-slate-50"
-                        )}
-                      >
-                        <div className={cn(
-                          "h-4 w-4 rounded-full border flex items-center justify-center shrink-0",
-                          isSelected ? "border-brand-600 bg-brand-600" : "border-slate-300 bg-white"
-                        )}>
-                          {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+
+                {/* ---- Multiple Choice ---- */}
+                {(q.type === 'multiple-choice' || !q.type) && (
+                  <div className="space-y-2 pl-6">
+                    {(q.options || []).map((opt, oIdx) => {
+                      const isSelected = blockAnswers[qIdx] === oIdx;
+                      return (
+                        <label
+                          key={oIdx}
+                          className={cn(
+                            "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all",
+                            isSelected
+                              ? "bg-brand-50 border-brand-500 ring-1 ring-brand-500"
+                              : "bg-white border-slate-200 hover:border-brand-300 hover:bg-slate-50"
+                          )}
+                        >
+                          <div className={cn(
+                            "h-4 w-4 rounded-full border flex items-center justify-center shrink-0",
+                            isSelected ? "border-brand-600 bg-brand-600" : "border-slate-300 bg-white"
+                          )}>
+                            {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                          </div>
+                          <span className={cn("text-sm", isSelected ? "text-brand-900 font-medium" : "text-slate-600")}>
+                            {opt}
+                          </span>
+                          <input
+                            type="radio"
+                            name={`q-${block.id}-${qIdx}`}
+                            className="hidden"
+                            onChange={() => onQuizAnswer?.(block.id, qIdx, oIdx)}
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* ---- True / False ---- */}
+                {q.type === 'true-false' && (
+                  <div className="flex gap-4 pl-6">
+                    {['True', 'False'].map((label, idx) => {
+                      const isSelected = blockAnswers[qIdx] === idx;
+                      return (
+                        <label
+                          key={label}
+                          className={cn(
+                            "flex items-center gap-3 px-6 py-3 rounded-lg border cursor-pointer transition-all flex-1",
+                            isSelected
+                              ? "bg-brand-50 border-brand-500 ring-1 ring-brand-500"
+                              : "bg-white border-slate-200 hover:border-brand-300 hover:bg-slate-50"
+                          )}
+                        >
+                          <div className={cn(
+                            "h-4 w-4 rounded-full border flex items-center justify-center shrink-0",
+                            isSelected ? "border-brand-600 bg-brand-600" : "border-slate-300 bg-white"
+                          )}>
+                            {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                          </div>
+                          <span className={cn("text-sm font-medium", isSelected ? "text-brand-900" : "text-slate-600")}>
+                            {label}
+                          </span>
+                          <input
+                            type="radio"
+                            name={`q-${block.id}-${qIdx}`}
+                            className="hidden"
+                            onChange={() => onQuizAnswer?.(block.id, qIdx, idx)}
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* ---- Fill in the Blank ---- */}
+                {q.type === 'fill-blank' && (
+                  <div className="pl-6">
+                    <input
+                      type="text"
+                      className={cn(
+                        "w-full p-3 rounded-lg border text-sm outline-none transition-all",
+                        blockAnswers[qIdx]
+                          ? "border-brand-300 bg-brand-50 ring-1 ring-brand-200"
+                          : "border-slate-200 bg-white focus:border-brand-400 focus:ring-1 focus:ring-brand-200"
+                      )}
+                      placeholder="Type your answer here..."
+                      value={typeof blockAnswers[qIdx] === 'string' ? blockAnswers[qIdx] : ''}
+                      onChange={(e) => onQuizAnswer?.(block.id, qIdx, e.target.value)}
+                    />
+                  </div>
+                )}
+
+                {/* ---- Matching ---- */}
+                {q.type === 'matching' && q.matchingPairs && (
+                  <div className="pl-6 space-y-3">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Match each item on the left to its correct pair on the right
+                    </p>
+                    {q.matchingPairs.map((pair, pIdx) => {
+                      const currentAnswers: string[] = Array.isArray(blockAnswers[qIdx]) ? blockAnswers[qIdx] : [];
+                      const selectedValue = currentAnswers[pIdx] || '';
+                      // Collect all right-side values as dropdown options
+                      const rightOptions = q.matchingPairs!.map(p => p.right);
+
+                      return (
+                        <div key={pIdx} className="flex items-center gap-3">
+                          <div className="flex-1 p-3 bg-slate-50 rounded-lg border border-slate-200 text-sm text-slate-700">
+                            {pair.left}
+                          </div>
+                          <span className="text-slate-300 text-sm shrink-0">→</span>
+                          <select
+                            className={cn(
+                              "flex-1 p-3 rounded-lg border text-sm outline-none transition-all cursor-pointer",
+                              selectedValue
+                                ? "border-brand-300 bg-brand-50 text-brand-900 ring-1 ring-brand-200"
+                                : "border-slate-200 bg-white text-slate-500 focus:border-brand-400"
+                            )}
+                            value={selectedValue}
+                            onChange={(e) => {
+                              const newAnswers = [...currentAnswers];
+                              // Ensure array is long enough
+                              while (newAnswers.length < q.matchingPairs!.length) {
+                                newAnswers.push('');
+                              }
+                              newAnswers[pIdx] = e.target.value;
+                              onQuizAnswer?.(block.id, qIdx, newAnswers);
+                            }}
+                          >
+                            <option value="">Select a match...</option>
+                            {rightOptions.map((opt, optIdx) => (
+                              <option key={optIdx} value={opt}>{opt}</option>
+                            ))}
+                          </select>
                         </div>
-                        <span className={cn("text-sm", isSelected ? "text-brand-900 font-medium" : "text-slate-600")}>
-                          {opt}
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* ---- Short Answer / Essay ---- */}
+                {q.type === 'short-answer' && (() => {
+                  const answerText = typeof blockAnswers[qIdx] === 'string' ? blockAnswers[qIdx] : '';
+                  const charCount = answerText.length;
+                  const meetsMinimum = charCount >= 20;
+
+                  return (
+                    <div className="pl-6 space-y-2">
+                      <textarea
+                        className={cn(
+                          "w-full p-3 rounded-lg border text-sm outline-none transition-all resize-y min-h-[120px]",
+                          meetsMinimum
+                            ? "border-brand-300 bg-brand-50 ring-1 ring-brand-200"
+                            : "border-slate-200 bg-white focus:border-brand-400 focus:ring-1 focus:ring-brand-200"
+                        )}
+                        placeholder="Write your response here (minimum 20 characters)..."
+                        value={answerText}
+                        onChange={(e) => onQuizAnswer?.(block.id, qIdx, e.target.value)}
+                      />
+                      <div className="flex justify-between items-center px-1">
+                        <p className="text-[10px] text-slate-400 italic flex items-center gap-1">
+                          <Info className="h-3 w-3" />
+                          This response will be reviewed by an instructor.
+                        </p>
+                        <span className={cn(
+                          "text-xs font-medium",
+                          meetsMinimum ? "text-green-600" : "text-slate-400"
+                        )}>
+                          {charCount}/20 min
                         </span>
-                        <input 
-                          type="radio" 
-                          name={`q-${block.id}-${qIdx}`} 
-                          className="hidden"
-                          onChange={() => onQuizAnswer?.(block.id, qIdx, oIdx)}
-                        />
-                      </label>
-                    );
-                  })}
-                </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             ))}
           </div>
