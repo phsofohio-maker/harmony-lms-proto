@@ -10,6 +10,7 @@ export interface User {
   email: string;
   role: UserRoleType;
   department?: string;
+  jobTitle?: string;
   licenseNumber?: string;
   licenseExpiry?: string;
 }
@@ -225,7 +226,11 @@ export type AuditActionType =
   | "ENROLLMENT_CREATE"
   | "ENROLLMENT_UPDATE"
   | "ASSESSMENT_SUBMIT"
-  | "ASSESSMENT_GRADE";
+  | "ASSESSMENT_GRADE"
+  | "COHORT_CREATE"
+  | "COHORT_UPDATE"
+  | "COHORT_DELETE"
+  | "BULK_ENROLLMENT";
 
 export interface AuditLog {
   id: string;
@@ -303,4 +308,23 @@ role: UserRoleType;
 department?: string;
 sentAt: string;
 status: "pending" | "expired" | "accepted";
+}
+
+// ============================================
+// COHORT MANAGEMENT
+// ============================================
+
+export interface CohortFilterCriteria {
+  jobTitles?: string[];
+  departments?: string[];
+}
+
+export interface Cohort {
+  id: string;
+  name: string;
+  description: string;
+  filterCriteria: CohortFilterCriteria;
+  courseIds: string[];
+  createdBy: string;
+  createdAt: string;
 }

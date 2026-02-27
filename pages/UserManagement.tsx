@@ -44,6 +44,7 @@ export const UserManagement: React.FC = () => {
         email: doc.data().email || '',
         role: doc.data().role || 'staff',
         department: doc.data().department,
+        jobTitle: doc.data().jobTitle,
       }));
       setUsers(fetchedUsers);
 
@@ -223,6 +224,9 @@ export const UserManagement: React.FC = () => {
                             <Mail className="h-3 w-3" />
                             {user.email}
                           </div>
+                          {user.jobTitle && (
+                            <div className="text-xs text-slate-400 mt-0.5">{user.jobTitle} &middot; {user.department || 'No dept'}</div>
+                          )}
                         </div>
                       </div>
                     </td>

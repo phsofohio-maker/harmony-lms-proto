@@ -50,7 +50,11 @@ export type AuditActionType =
   | 'ENROLLMENT_CREATE'
   | 'ENROLLMENT_UPDATE'
   | 'ASSESSMENT_SUBMIT'
-  | 'ASSESSMENT_GRADE';
+  | 'ASSESSMENT_GRADE'
+  | 'COHORT_CREATE'
+  | 'COHORT_UPDATE'
+  | 'COHORT_DELETE'
+  | 'BULK_ENROLLMENT';
 
 // Internal log structure for Firestore
 interface FirestoreAuditLog {

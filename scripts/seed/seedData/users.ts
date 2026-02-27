@@ -11,6 +11,7 @@ export interface SeedUser {
   displayName: string;
   role: 'admin' | 'instructor' | 'staff';
   department: string;
+  jobTitle: string;
 }
 
 export const SEED_USERS: SeedUser[] = [
@@ -21,6 +22,7 @@ export const SEED_USERS: SeedUser[] = [
     displayName: 'Sarah Chen',
     role: 'admin',
     department: 'Information Technology',
+    jobTitle: 'IT Administrator',
   },
   {
     email: 'marcus.wright@parrish.health',
@@ -28,6 +30,7 @@ export const SEED_USERS: SeedUser[] = [
     displayName: 'Marcus Wright',
     role: 'admin',
     department: 'Clinical Education',
+    jobTitle: 'Education Director',
   },
 
   // ── Instructors (3) ─────────────────────────────
@@ -37,6 +40,7 @@ export const SEED_USERS: SeedUser[] = [
     displayName: 'Dr. Patricia Gomez',
     role: 'instructor',
     department: 'Hospice Care',
+    jobTitle: 'Medical Director',
   },
   {
     email: 'james.okonkwo@parrish.health',
@@ -44,6 +48,7 @@ export const SEED_USERS: SeedUser[] = [
     displayName: 'James Okonkwo',
     role: 'instructor',
     department: 'Clinical Education',
+    jobTitle: 'Clinical Educator',
   },
   {
     email: 'linda.tran@parrish.health',
@@ -51,6 +56,7 @@ export const SEED_USERS: SeedUser[] = [
     displayName: 'Linda Tran',
     role: 'instructor',
     department: 'Compliance',
+    jobTitle: 'Compliance Officer',
   },
 
   // ── Staff (7) ───────────────────────────────────
@@ -60,6 +66,7 @@ export const SEED_USERS: SeedUser[] = [
     displayName: 'Maria Santos, RN',
     role: 'staff',
     department: 'Hospice Care',
+    jobTitle: 'RN',
   },
   {
     email: 'david.kim@parrish.health',
@@ -67,6 +74,7 @@ export const SEED_USERS: SeedUser[] = [
     displayName: 'David Kim, CNA',
     role: 'staff',
     department: 'Hospice Care',
+    jobTitle: 'CNA',
   },
   {
     email: 'ashley.brooks@parrish.health',
@@ -74,6 +82,7 @@ export const SEED_USERS: SeedUser[] = [
     displayName: 'Ashley Brooks, LPN',
     role: 'staff',
     department: 'Hospice Care',
+    jobTitle: 'LPN',
   },
   {
     email: 'robert.jackson@parrish.health',
@@ -81,6 +90,7 @@ export const SEED_USERS: SeedUser[] = [
     displayName: 'Robert Jackson, RN',
     role: 'staff',
     department: 'Home Health',
+    jobTitle: 'RN',
   },
   {
     email: 'jennifer.patel@parrish.health',
@@ -88,6 +98,7 @@ export const SEED_USERS: SeedUser[] = [
     displayName: 'Jennifer Patel, MSW',
     role: 'staff',
     department: 'Social Services',
+    jobTitle: 'MSW',
   },
   {
     email: 'thomas.nguyen@parrish.health',
@@ -95,6 +106,7 @@ export const SEED_USERS: SeedUser[] = [
     displayName: 'Thomas Nguyen, RN',
     role: 'staff',
     department: 'Hospice Care',
+    jobTitle: 'RN',
   },
   {
     email: 'rachel.martinez@parrish.health',
@@ -102,5 +114,6 @@ export const SEED_USERS: SeedUser[] = [
     displayName: 'Rachel Martinez, CHPNA',
     role: 'staff',
     department: 'Hospice Care',
+    jobTitle: 'CHPNA',
   },
 ];
