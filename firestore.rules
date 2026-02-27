@@ -269,9 +269,19 @@ service cloud.firestore {
     }
     
     // ============================================
+    // COHORTS (Bulk Enrollment Groups)
+    // ============================================
+
+    match /cohorts/{cohortId} {
+      allow read: if hasAnyRole(['admin', 'instructor']);
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
     // CATCH-ALL: Deny everything else
     // ============================================
-    
+
     match /{document=**} {
       allow read, write: if false;
     }

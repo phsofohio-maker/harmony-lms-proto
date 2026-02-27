@@ -32,6 +32,7 @@ import { MyGrades } from './pages/MyGrades';
 import { GradeManagement } from './pages/GradeManagement';
 import { Invitations } from './pages/Invitations';
 import { RemediationQueue } from './pages/RemediationQueue';
+import { CohortManagement } from './pages/CohortManagement';
 import { Button } from './components/ui/Button';
 import { Loader2, AlertCircle } from 'lucide-react';
 
@@ -158,6 +159,9 @@ const AppContent: React.FC = () => {
 
       case '/users':
         return <UserManagement />;
+
+      case '/cohorts':
+        return <CohortManagement />;
 
       case '/audit':
         return <AuditLogs />;
