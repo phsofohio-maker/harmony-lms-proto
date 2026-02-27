@@ -12,6 +12,8 @@ export interface SeedUser {
   role: 'admin' | 'instructor' | 'staff';
   department: string;
   jobTitle: string;
+  licenseNumber?: string;
+  licenseExpiry?: string;
 }
 
 export const SEED_USERS: SeedUser[] = [
@@ -67,6 +69,8 @@ export const SEED_USERS: SeedUser[] = [
     role: 'staff',
     department: 'Hospice Care',
     jobTitle: 'RN',
+    licenseNumber: 'RN-FL-2024-48291',
+    licenseExpiry: '2026-08-15',
   },
   {
     email: 'david.kim@parrish.health',
@@ -75,6 +79,8 @@ export const SEED_USERS: SeedUser[] = [
     role: 'staff',
     department: 'Hospice Care',
     jobTitle: 'CNA',
+    licenseNumber: 'CNA-FL-2023-73125',
+    licenseExpiry: '2026-03-15',
   },
   {
     email: 'ashley.brooks@parrish.health',
@@ -83,6 +89,8 @@ export const SEED_USERS: SeedUser[] = [
     role: 'staff',
     department: 'Hospice Care',
     jobTitle: 'LPN',
+    licenseNumber: 'LPN-FL-2022-50814',
+    licenseExpiry: '2025-12-01',
   },
   {
     email: 'robert.jackson@parrish.health',
@@ -91,6 +99,8 @@ export const SEED_USERS: SeedUser[] = [
     role: 'staff',
     department: 'Home Health',
     jobTitle: 'RN',
+    licenseNumber: 'RN-FL-2024-61047',
+    licenseExpiry: '2027-01-20',
   },
   {
     email: 'jennifer.patel@parrish.health',
@@ -107,6 +117,8 @@ export const SEED_USERS: SeedUser[] = [
     role: 'staff',
     department: 'Hospice Care',
     jobTitle: 'RN',
+    licenseNumber: 'RN-FL-2023-89412',
+    licenseExpiry: '2026-03-01',
   },
   {
     email: 'rachel.martinez@parrish.health',
@@ -115,5 +127,7 @@ export const SEED_USERS: SeedUser[] = [
     role: 'staff',
     department: 'Hospice Care',
     jobTitle: 'CHPNA',
+    licenseNumber: 'CHPNA-FL-2024-33291',
+    licenseExpiry: '2026-11-30',
   },
 ];

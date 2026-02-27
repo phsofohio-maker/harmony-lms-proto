@@ -270,6 +270,20 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
               <AlertTriangle className="h-3 w-3" />
               Clinical Alert
             </button>
+            <button
+              onClick={() => addBlock('correction_log')}
+              className="px-4 py-2 rounded-full hover:bg-red-50 text-sm font-medium text-red-700 flex items-center gap-2 transition-colors whitespace-nowrap"
+            >
+              <Plus className="h-3 w-3 text-red-400" />
+              Correction Log
+            </button>
+            <button
+              onClick={() => addBlock('obj_subj_validator')}
+              className="px-4 py-2 rounded-full hover:bg-purple-50 text-sm font-medium text-purple-700 flex items-center gap-2 transition-colors whitespace-nowrap"
+            >
+              <Plus className="h-3 w-3 text-purple-400" />
+              Obj/Subj Exercise
+            </button>
           </div>
         </div>
 

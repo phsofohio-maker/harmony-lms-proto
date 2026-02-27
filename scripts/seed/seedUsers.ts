@@ -67,6 +67,8 @@ export async function seedUsers(): Promise<CreatedUser[]> {
           role: user.role,
           department: user.department,
           jobTitle: user.jobTitle,
+          ...(user.licenseNumber && { licenseNumber: user.licenseNumber }),
+          ...(user.licenseExpiry && { licenseExpiry: user.licenseExpiry }),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           ...(created && { createdAt: admin.firestore.FieldValue.serverTimestamp() }),
         },

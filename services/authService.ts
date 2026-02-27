@@ -75,6 +75,9 @@ import {
         email: data.email || '',
         role: data.role || 'staff',
         department: data.department,
+        jobTitle: data.jobTitle,
+        licenseNumber: data.licenseNumber,
+        licenseExpiry: data.licenseExpiry,
       } as User;
     } catch (error) {
       console.error('Error fetching user profile:', error);

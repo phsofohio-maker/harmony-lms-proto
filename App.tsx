@@ -53,6 +53,7 @@ const AppContent: React.FC = () => {
   const [routeContext, setRouteContext] = useState<{
     courseId?: string;
     moduleId?: string;
+    courseCategory?: string;
   }>({});
 
   if (isLoading) return <LoadingScreen />;
@@ -121,6 +122,7 @@ const AppContent: React.FC = () => {
       <CoursePlayer
         courseId={routeContext.courseId}
         moduleId={routeContext.moduleId}
+        courseCategory={routeContext.courseCategory}
         onBack={() => setCurrentPath('/course')}
       />
     );

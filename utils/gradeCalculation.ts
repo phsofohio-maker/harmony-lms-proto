@@ -19,7 +19,7 @@
  * @module utils/gradeCalculation
  */
 
-import { QuizQuestion, QuizQuestionType, QuizBlockData } from '../functions/src/types';
+import { QuizQuestion, QuizQuestionType, QuizBlockData, ObjSubjValidatorBlockData } from '../functions/src/types';
 
 // ============================================
 // RESULT TYPES
@@ -284,4 +284,76 @@ export const isQuizComplete = (
   answers: unknown[]
 ): boolean => {
   return questions.every((q, idx) => isAnswerComplete(q, answers[idx]));
+};
+
+// ============================================
+// OBJECTIVE VS. SUBJECTIVE GRADING
+// ============================================
+
+export interface ObjSubjItemResult {
+  itemId: string;
+  text: string;
+  correctCategory: string;
+  userCategory: string;
+  isCorrect: boolean;
+  earnedPoints: number;
+  maxPoints: number;
+}
+
+export interface ObjSubjGradeResult {
+  score: number;
+  passed: boolean;
+  totalItems: number;
+  correctItems: number;
+  earnedPoints: number;
+  maxPoints: number;
+  itemResults: ObjSubjItemResult[];
+}
+
+/**
+ * Grades an Objective vs. Subjective Validator block.
+ *
+ * Each item is all-or-nothing: full points if the learner's
+ * categorization matches the correct answer, zero otherwise.
+ *
+ * @param data - The block's data containing items and pointsPerItem
+ * @param userAnswers - Record<itemId, 'objective' | 'subjective'>
+ * @param passingScore - Minimum percentage to pass (default 80)
+ */
+export const gradeObjSubjBlock = (
+  data: ObjSubjValidatorBlockData,
+  userAnswers: Record<string, string>,
+  passingScore: number = 80
+): ObjSubjGradeResult => {
+  const items = data.items || [];
+  const pointsPerItem = data.pointsPerItem || 10;
+
+  const itemResults: ObjSubjItemResult[] = items.map(item => {
+    const userCategory = userAnswers[item.id] || '';
+    const isCorrect = userCategory.toLowerCase() === item.category.toLowerCase();
+    return {
+      itemId: item.id,
+      text: item.text,
+      correctCategory: item.category,
+      userCategory,
+      isCorrect,
+      earnedPoints: isCorrect ? pointsPerItem : 0,
+      maxPoints: pointsPerItem,
+    };
+  });
+
+  const maxPoints = items.length * pointsPerItem;
+  const earnedPoints = itemResults.reduce((sum, r) => sum + r.earnedPoints, 0);
+  const correctItems = itemResults.filter(r => r.isCorrect).length;
+  const score = maxPoints > 0 ? Math.round((earnedPoints / maxPoints) * 100) : 0;
+
+  return {
+    score,
+    passed: score >= passingScore,
+    totalItems: items.length,
+    correctItems,
+    earnedPoints,
+    maxPoints,
+    itemResults,
+  };
 };
