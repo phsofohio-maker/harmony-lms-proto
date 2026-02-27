@@ -30,6 +30,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 // Services
 import { getCourse, getModules } from '../services/courseService';
+import { LicenseGate } from '../components/clinical/LicenseGate';
 
 interface CourseDetailProps {
   courseId: string;
@@ -105,7 +106,7 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
 
   // Start a specific module
   const handleStartModule = (moduleId: string) => {
-    onNavigate('/player', { courseId, moduleId });
+    onNavigate('/player', { courseId, moduleId, courseCategory: course?.category });
   };
 
   // Get module completion status
@@ -151,6 +152,7 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
   const totalMinutes = modules.reduce((acc, m) => acc + (m.estimatedMinutes || 0), 0);
 
   return (
+    <LicenseGate courseCategory={course.category}>
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div className="bg-white border-b border-slate-200">
@@ -407,5 +409,6 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
         </div>
       </div>
     </div>
+    </LicenseGate>
   );
 };

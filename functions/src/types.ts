@@ -27,7 +27,9 @@ export type BlockType =
 | "quiz"
 | "checklist"
 | "drag_drop"
-| "flashcard";
+| "flashcard"
+| "correction_log"
+| "obj_subj_validator";
 
 export interface TextBlockData {
 content: string;
@@ -78,6 +80,37 @@ title: string;
 items: { id: string; label: string; required: boolean }[];
 }
 
+// ---- Correction Log (medical single-line-and-initial protocol) ----
+
+export interface CorrectionLogEntry {
+  id: string;
+  text: string;
+  author: string;
+  authorId: string;
+  timestamp: string;
+  isOriginal: boolean;
+  supersedes?: string; // ID of original entry this corrects
+}
+
+export interface CorrectionLogBlockData {
+  title: string;
+  entries: CorrectionLogEntry[];
+}
+
+// ---- Objective vs. Subjective Validator ----
+
+export interface ObjSubjItem {
+  id: string;
+  text: string;
+  category: 'objective' | 'subjective';
+}
+
+export interface ObjSubjValidatorBlockData {
+  title: string;
+  items: ObjSubjItem[];
+  pointsPerItem: number;
+}
+
 // Union type for all block data
 export type AnyBlockData =
 | TextBlockData
@@ -86,6 +119,8 @@ export type AnyBlockData =
 | VideoBlockData
 | QuizBlockData
 | ChecklistBlockData
+| CorrectionLogBlockData
+| ObjSubjValidatorBlockData
 | Record<string, any>;
 
 export interface ContentBlock {
@@ -230,7 +265,9 @@ export type AuditActionType =
   | "COHORT_CREATE"
   | "COHORT_UPDATE"
   | "COHORT_DELETE"
-  | "BULK_ENROLLMENT";
+  | "BULK_ENROLLMENT"
+  | "CORRECTION_ENTRY"
+  | "LICENSE_GATE_BLOCKED";
 
 export interface AuditLog {
   id: string;
@@ -328,3 +365,12 @@ export interface Cohort {
   createdBy: string;
   createdAt: string;
 }
+
+// ============================================
+// LICENSE & COMPLIANCE
+// ============================================
+
+export type LicenseStatus = 'valid' | 'expiring_soon' | 'expired' | 'not_set';
+
+/** Course categories that require a valid license to access */
+export const LICENSE_REQUIRED_CATEGORIES: CourseCategory[] = ['hospice', 'clinical_skills'];

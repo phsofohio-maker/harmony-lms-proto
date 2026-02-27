@@ -291,6 +291,10 @@ function getDefaultBlockData(type: BlockType, variant?: string): any {
       return { title: 'Knowledge Check', questions: [], passingScore: 80 };
     case 'checklist':
       return { title: 'Checklist', items: [] };
+    case 'correction_log':
+      return { title: 'Correction Log', entries: [] };
+    case 'obj_subj_validator':
+      return { title: 'Objective vs. Subjective Exercise', items: [], pointsPerItem: 10 };
     default:
       return {};
   }

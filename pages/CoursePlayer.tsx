@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Module, QuizBlockData, ContentBlock } from '../functions/src/types';
+import { Module, QuizBlockData, ContentBlock, ObjSubjValidatorBlockData, CorrectionLogEntry } from '../functions/src/types';
 import { BlockRenderer } from '../components/player/BlockRenderer';
 import { Button } from '../components/ui/Button';
 import { 
@@ -24,7 +24,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import { cn } from '../utils';
-import { gradeQuestion , gradeQuiz } from '../utils/gradeCalculation';
+import { gradeQuestion , gradeQuiz, gradeObjSubjBlock } from '../utils/gradeCalculation';
 
 // Hooks
 import { useEnrollment } from '../hooks/useUserEnrollments';
@@ -38,17 +38,20 @@ import { getModuleWithBlocks } from '../services/courseService';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { auditService } from '../services/auditService';
+import { LicenseGate } from '../components/clinical/LicenseGate';
 
 interface CoursePlayerProps {
   courseId: string;
   moduleId: string;
+  courseCategory?: string;
   onBack: () => void;
 }
 
-export const CoursePlayer: React.FC<CoursePlayerProps> = ({ 
-  courseId, 
-  moduleId, 
-  onBack 
+export const CoursePlayer: React.FC<CoursePlayerProps> = ({
+  courseId,
+  moduleId,
+  courseCategory,
+  onBack
 }) => {
   const { user } = useAuth();
   
@@ -185,9 +188,19 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
         }
       }
 
-      // Mark non-quiz blocks as complete
+      // Process obj_subj_validator blocks
       for (const block of moduleData.blocks) {
-        if (block.type !== 'quiz' && block.required) {
+        if (block.type === 'obj_subj_validator') {
+          const data = block.data as ObjSubjValidatorBlockData;
+          const userAnswers = (answers[block.id]?.[0] || {}) as Record<string, string>;
+          const result = gradeObjSubjBlock(data, userAnswers, moduleData.passingScore || 80);
+          await submitQuiz(block.id, result.score, result.passed, requiredBlocks);
+        }
+      }
+
+      // Mark non-assessable blocks as complete (correction_log and content blocks)
+      for (const block of moduleData.blocks) {
+        if (block.type !== 'quiz' && block.type !== 'obj_subj_validator' && block.required) {
           const isAlreadyComplete = progress?.completedBlocks[block.id]?.completed;
           if (!isAlreadyComplete) {
             await completeBlock(block.id, requiredBlocks);
@@ -227,28 +240,48 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
     }
   };
 
-  // PHASE C: Step 3 - Updated "allQuestionsAnswered" using the new helper
+  // Updated "allQuestionsAnswered" — now includes obj/subj and correction_log blocks
   const allQuestionsAnswered = moduleData?.blocks.every(block => {
-    if (block.type !== 'quiz') return true;
-    const quiz = block.data as QuizBlockData;
-    const blockAnswers = answers[block.id] || [];
-    return quiz.questions.every((q, idx) => isQuestionAnswered(q, blockAnswers[idx]));
+    if (block.type === 'quiz') {
+      const quiz = block.data as QuizBlockData;
+      const blockAnswers = answers[block.id] || [];
+      return quiz.questions.every((q, idx) => isQuestionAnswered(q, blockAnswers[idx]));
+    }
+    if (block.type === 'obj_subj_validator') {
+      const data = block.data as ObjSubjValidatorBlockData;
+      const cats = answers[block.id]?.[0] as Record<string, string> | undefined;
+      if (!cats || !data.items) return false;
+      return data.items.every(item => cats[item.id] !== undefined);
+    }
+    if (block.type === 'correction_log' && block.required) {
+      const entries = answers[block.id]?.[0] as CorrectionLogEntry[] | undefined;
+      if (!entries) return false;
+      return entries.some(e => !e.isOriginal); // At least one correction made
+    }
+    return true;
   }) ?? false;
 
-  // Calculate overall quiz result for display
+  // Calculate overall quiz result for display (includes quiz + obj/subj blocks)
   const getOverallResult = (): { score: number; passed: boolean } | null => {
     if (!moduleData) return null;
-    
-    const quizBlocks = moduleData.blocks.filter(b => b.type === 'quiz');
-    if (quizBlocks.length === 0) return { score: 100, passed: true };
-    
-    let totalScore = 0;
-    quizBlocks.forEach(block => {
-      const { score } = calculateQuizScore(block);
-      totalScore += score;
-    });
-    
-    const avgScore = Math.round(totalScore / quizBlocks.length);
+
+    const scoredBlocks: { score: number }[] = [];
+
+    for (const block of moduleData.blocks) {
+      if (block.type === 'quiz') {
+        scoredBlocks.push(calculateQuizScore(block));
+      } else if (block.type === 'obj_subj_validator') {
+        const data = block.data as ObjSubjValidatorBlockData;
+        const userAnswers = (answers[block.id]?.[0] || {}) as Record<string, string>;
+        const result = gradeObjSubjBlock(data, userAnswers, moduleData.passingScore || 80);
+        scoredBlocks.push({ score: result.score });
+      }
+    }
+
+    if (scoredBlocks.length === 0) return { score: 100, passed: true };
+
+    const totalScore = scoredBlocks.reduce((sum, b) => sum + b.score, 0);
+    const avgScore = Math.round(totalScore / scoredBlocks.length);
     return { score: avgScore, passed: avgScore >= (moduleData.passingScore || 80) };
   };
 
@@ -348,6 +381,7 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
   const result = moduleComplete ? getOverallResult() : null;
 
   return (
+    <LicenseGate courseCategory={courseCategory}>
     <div className="flex flex-col h-screen bg-white">
       {/* Header */}
       <div className="h-16 border-b border-slate-200 flex items-center justify-between px-6 bg-white sticky top-0 z-20">
@@ -479,5 +513,6 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
         </div>
       </div>
     </div>
+    </LicenseGate>
   );
 };

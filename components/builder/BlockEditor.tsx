@@ -24,6 +24,10 @@ import {
   TextBlockData,
   ImageBlockData,
   VideoBlockData,
+  CorrectionLogBlockData,
+  CorrectionLogEntry,
+  ObjSubjValidatorBlockData,
+  ObjSubjItem,
 } from '../../functions/src/types';
 import {
   Trash2, GripVertical, CheckSquare, Image as ImageIcon,
@@ -597,6 +601,157 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
           </div>
         );
 
+      // ============================================
+      // CORRECTION LOG
+      // ============================================
+      case 'correction_log': {
+        const logData = block.data as CorrectionLogBlockData;
+        return (
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Log Title</label>
+              <input
+                className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-brand-500 outline-none text-sm bg-white text-slate-900"
+                value={logData.title || ''}
+                onChange={(e) => handleChange('title', e.target.value)}
+                placeholder="e.g., Patient Assessment Notes"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">
+                Seed Entries ({(logData.entries || []).length})
+              </label>
+              <p className="text-[10px] text-slate-400 italic mb-2">
+                Add initial entries that learners will practice correcting using the single-line-and-initial protocol.
+              </p>
+              <div className="space-y-2">
+                {(logData.entries || []).map((entry, idx) => (
+                  <div key={entry.id || idx} className="flex items-start gap-2">
+                    <textarea
+                      className="flex-1 text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:border-brand-300 outline-none resize-none"
+                      rows={2}
+                      value={entry.text}
+                      placeholder={`Entry ${idx + 1} — e.g., "Patient vitals: BP 120/80, HR 78..."`}
+                      onChange={(e) => {
+                        const newEntries = [...(logData.entries || [])];
+                        newEntries[idx] = { ...entry, text: e.target.value };
+                        handleChange('entries', newEntries);
+                      }}
+                    />
+                    <button
+                      onClick={() => handleChange('entries', (logData.entries || []).filter((_, i) => i !== idx))}
+                      className="text-slate-300 hover:text-red-400 mt-1"
+                    >
+                      <Minus className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  const newEntry: CorrectionLogEntry = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    text: '',
+                    author: 'Course Author',
+                    authorId: 'seed',
+                    timestamp: new Date().toISOString(),
+                    isOriginal: true,
+                  };
+                  handleChange('entries', [...(logData.entries || []), newEntry]);
+                }}
+                className="text-[10px] font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1 mt-2"
+              >
+                <Plus className="h-3 w-3" /> Add Entry
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      // ============================================
+      // OBJECTIVE VS. SUBJECTIVE VALIDATOR
+      // ============================================
+      case 'obj_subj_validator': {
+        const objSubjData = block.data as ObjSubjValidatorBlockData;
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-8">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Exercise Title</label>
+                <input
+                  className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-brand-500 outline-none text-sm bg-white text-slate-900"
+                  value={objSubjData.title || ''}
+                  onChange={(e) => handleChange('title', e.target.value)}
+                  placeholder="e.g., Classify the Clinical Data"
+                />
+              </div>
+              <div className="col-span-4">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Points per Item</label>
+                <input
+                  type="number"
+                  className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-brand-500 outline-none text-sm bg-white text-slate-900 text-center font-bold"
+                  value={objSubjData.pointsPerItem || 10}
+                  min={1}
+                  onChange={(e) => handleChange('pointsPerItem', parseInt(e.target.value) || 1)}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">
+                Items ({(objSubjData.items || []).length})
+              </label>
+              <div className="space-y-2">
+                {(objSubjData.items || []).map((item, idx) => (
+                  <div key={item.id || idx} className="flex items-center gap-2">
+                    <input
+                      className="flex-1 text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:border-brand-300 outline-none"
+                      value={item.text}
+                      placeholder={`Item ${idx + 1} — e.g., "Patient reports feeling dizzy"`}
+                      onChange={(e) => {
+                        const newItems = [...(objSubjData.items || [])];
+                        newItems[idx] = { ...item, text: e.target.value };
+                        handleChange('items', newItems);
+                      }}
+                    />
+                    <select
+                      className="text-xs p-2 border border-slate-200 rounded bg-white font-bold"
+                      value={item.category}
+                      onChange={(e) => {
+                        const newItems = [...(objSubjData.items || [])];
+                        newItems[idx] = { ...item, category: e.target.value as 'objective' | 'subjective' };
+                        handleChange('items', newItems);
+                      }}
+                    >
+                      <option value="objective">Objective</option>
+                      <option value="subjective">Subjective</option>
+                    </select>
+                    <button
+                      onClick={() => handleChange('items', (objSubjData.items || []).filter((_, i) => i !== idx))}
+                      className="text-slate-300 hover:text-red-400"
+                    >
+                      <Minus className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  const newItem: ObjSubjItem = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    text: '',
+                    category: 'objective',
+                  };
+                  handleChange('items', [...(objSubjData.items || []), newItem]);
+                }}
+                className="text-[10px] font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1 mt-2"
+              >
+                <Plus className="h-3 w-3" /> Add Item
+              </button>
+            </div>
+          </div>
+        );
+      }
+
       default:
         return null;
     }
@@ -613,6 +768,8 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
     video: Video,
     quiz: CheckSquare,
     checklist: CheckSquare,
+    correction_log: FileText,
+    obj_subj_validator: CheckSquare,
   }[block.type] || Hash;
 
   return (

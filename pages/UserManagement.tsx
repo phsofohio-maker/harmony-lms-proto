@@ -45,6 +45,8 @@ export const UserManagement: React.FC = () => {
         role: doc.data().role || 'staff',
         department: doc.data().department,
         jobTitle: doc.data().jobTitle,
+        licenseNumber: doc.data().licenseNumber,
+        licenseExpiry: doc.data().licenseExpiry,
       }));
       setUsers(fetchedUsers);
 
@@ -185,6 +187,7 @@ export const UserManagement: React.FC = () => {
             <tr>
               <th className="px-6 py-4 font-semibold text-slate-700">Staff Member</th>
               <th className="px-6 py-4 font-semibold text-slate-700">Role</th>
+              <th className="px-6 py-4 font-semibold text-slate-700">License</th>
               <th className="px-6 py-4 font-semibold text-slate-700">Compliance</th>
               <th className="px-6 py-4 font-semibold text-slate-700">Enrollments</th>
               <th className="px-6 py-4 font-semibold text-slate-700 text-right">Actions</th>
@@ -193,14 +196,14 @@ export const UserManagement: React.FC = () => {
           <tbody className="divide-y divide-slate-100">
             {isLoading ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
                   <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
                   Loading staff directory...
                 </td>
               </tr>
             ) : filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
+                <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
                   {searchFilter ? 'No staff members match your search.' : 'No users found in the system.'}
                 </td>
               </tr>
@@ -237,6 +240,34 @@ export const UserManagement: React.FC = () => {
                       )}>
                         {user.role}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {(() => {
+                        if (!user.licenseExpiry) {
+                          return <span className="text-xs text-slate-400">N/A</span>;
+                        }
+                        const expiry = new Date(user.licenseExpiry);
+                        const now = new Date();
+                        const daysLeft = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                        const isExpired = daysLeft < 0;
+                        const isExpiringSoon = !isExpired && daysLeft <= 30;
+
+                        return (
+                          <div>
+                            <span className={cn(
+                              "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                              isExpired ? "bg-red-100 text-red-700" :
+                              isExpiringSoon ? "bg-amber-100 text-amber-700" :
+                              "bg-green-100 text-green-700"
+                            )}>
+                              {isExpired ? 'Expired' : isExpiringSoon ? `${daysLeft}d left` : 'Valid'}
+                            </span>
+                            <div className="text-[10px] text-slate-400 mt-0.5">
+                              {expiry.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">

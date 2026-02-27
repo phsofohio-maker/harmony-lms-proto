@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { ContentBlock, TextBlockData, VideoBlockData, ImageBlockData, QuizBlockData } from '../../functions/src/types';
+import { ContentBlock, TextBlockData, VideoBlockData, ImageBlockData, QuizBlockData, CorrectionLogBlockData, ObjSubjValidatorBlockData } from '../../functions/src/types';
 import { cn } from '../../utils';
 import { Info, AlertTriangle, AlertOctagon, FileText, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
+import { CorrectionLogPlayer } from './CorrectionLogPlayer';
+import { ObjSubjPlayer } from './ObjSubjPlayer';
 
 interface BlockRendererProps {
   block: ContentBlock;
@@ -295,6 +297,26 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onQuizAnswe
             ))}
           </div>
         </div>
+      );
+
+    case 'correction_log':
+      return (
+        <CorrectionLogPlayer
+          blockId={block.id}
+          data={block.data as CorrectionLogBlockData}
+          onAnswer={(bId, qIdx, answer) => onQuizAnswer?.(bId, qIdx, answer)}
+          existingAnswers={answers?.[block.id]?.[0]}
+        />
+      );
+
+    case 'obj_subj_validator':
+      return (
+        <ObjSubjPlayer
+          blockId={block.id}
+          data={block.data as ObjSubjValidatorBlockData}
+          onAnswer={(bId, qIdx, answer) => onQuizAnswer?.(bId, qIdx, answer)}
+          existingAnswers={answers?.[block.id]?.[0]}
+        />
       );
 
     default:
