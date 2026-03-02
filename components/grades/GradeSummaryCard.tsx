@@ -7,12 +7,12 @@
  * @module components/grades/GradeSummaryCard
  */
 import React from 'react';
-import { CourseGradeDoc } from '../../functions/src/types';
+import { CourseGradeDoc, CourseGradeCalculation } from '../../functions/src/types';
 import { Shield, CheckCircle, XCircle, ChevronRight } from 'lucide-react';
 import { cn } from '../../utils';
 
 interface GradeSummaryCardProps {
-  courseGrade: CourseGradeDoc;
+  courseGrade: CourseGradeDoc | CourseGradeCalculation;
   courseTitle: string;
   onClick?: () => void;
 }

@@ -37,6 +37,22 @@ const getWeightedDisplay = (weighted: number | null): string => {
   return weighted.toFixed(1);
 };
 
+type CompetencyLevel = 'Mastery' | 'Competent' | 'Developing' | 'Not Competent';
+
+const getCompetencyLevel = (score: number): CompetencyLevel => {
+  if (score >= 90) return 'Mastery';
+  if (score >= 80) return 'Competent';
+  if (score >= 70) return 'Developing';
+  return 'Not Competent';
+};
+
+const competencyColors: Record<CompetencyLevel, string> = {
+  'Mastery': 'bg-green-100 text-green-700 border-green-200',
+  'Competent': 'bg-blue-100 text-blue-700 border-blue-200',
+  'Developing': 'bg-amber-100 text-amber-700 border-amber-200',
+  'Not Competent': 'bg-red-100 text-red-700 border-red-200',
+};
+
 export const GradeBreakdown: React.FC<GradeBreakdownProps> = ({
   calculation,
   showWeights = true,
@@ -155,8 +171,28 @@ export const GradeBreakdown: React.FC<GradeBreakdownProps> = ({
       {/* Summary Footer */}
       <div className="border-t border-slate-200 bg-slate-50 px-6 py-4">
         <div className="flex items-center justify-between flex-wrap gap-4">
-          {/* Overall Score */}
+          {/* Overall Score + Progress Ring */}
           <div className="flex items-center gap-6">
+            {/* Completion Progress Ring */}
+            <div className="relative shrink-0">
+              <svg width="56" height="56" className="-rotate-90">
+                <circle cx="28" cy="28" r="22" fill="none" stroke="#e2e8f0" strokeWidth="4" />
+                <circle
+                  cx="28" cy="28" r="22" fill="none"
+                  stroke={calculation.completionPercent === 100 ? '#16a34a' : '#2563eb'}
+                  strokeWidth="4" strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 22}
+                  strokeDashoffset={2 * Math.PI * 22 - (calculation.completionPercent / 100) * 2 * Math.PI * 22}
+                  className="transition-all duration-500"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[10px] font-bold text-slate-700">
+                  {calculation.completionPercent}%
+                </span>
+              </div>
+            </div>
+
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Overall Score</p>
               <p className={cn(
@@ -166,12 +202,19 @@ export const GradeBreakdown: React.FC<GradeBreakdownProps> = ({
                 {calculation.overallScore}%
               </p>
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Completion</p>
-              <p className="text-lg font-bold text-slate-700">
-                {calculation.completionPercent}%
-              </p>
-            </div>
+
+            {/* Competency Badge */}
+            {(() => {
+              const competency = getCompetencyLevel(calculation.overallScore);
+              return (
+                <span className={cn(
+                  'inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider border',
+                  competencyColors[competency]
+                )}>
+                  {competency}
+                </span>
+              );
+            })()}
           </div>
 
           {/* Critical Modules Status */}

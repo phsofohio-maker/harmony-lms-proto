@@ -60,6 +60,22 @@
         { "fieldPath": "supersededBy", "order": "ASCENDING" },
         { "fieldPath": "gradedAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "course_grades",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "calculatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "course_grades",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "courseId", "order": "ASCENDING" },
+        { "fieldPath": "overallScore", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
