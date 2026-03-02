@@ -25,10 +25,10 @@ import {
   Filter,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { cn } from '../../utils';
+import { cn, formatDate } from '../../utils';
 import { GradeBreakdown } from './GradeBreakdown';
 import { getCourseEnrollments } from '../../services/enrollmentService';
-import { getSavedCourseGrade } from '../../services/courseGradeService';
+import { getCourseGradesForCourse } from '../../services/courseGradeService';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 
@@ -45,7 +45,7 @@ interface RosterEntry {
   courseGrade: CourseGradeCalculation | null;
 }
 
-type SortField = 'name' | 'score' | 'completion' | 'status';
+type SortField = 'name' | 'score' | 'completion' | 'status' | 'lastActivity';
 type SortDirection = 'asc' | 'desc';
 
 export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
@@ -62,7 +62,17 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
     setError(null);
 
     try {
-      const enrollments = await getCourseEnrollments(courseId);
+      // Fetch enrollments and course grades in parallel (bulk)
+      const [enrollments, allCourseGrades] = await Promise.all([
+        getCourseEnrollments(courseId),
+        getCourseGradesForCourse(courseId).catch(() => []),
+      ]);
+
+      // Index grades by userId for O(1) lookup
+      const gradesByUserId = new Map<string, CourseGradeCalculation>(
+        allCourseGrades.map(g => [g.userId, g] as [string, CourseGradeCalculation])
+      );
+
       const rosterEntries: RosterEntry[] = [];
 
       for (const enrollment of enrollments) {
@@ -82,19 +92,11 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
           // Non-critical
         }
 
-        // Fetch course grade
-        let courseGrade: CourseGradeCalculation | null = null;
-        try {
-          courseGrade = await getSavedCourseGrade(enrollment.userId, courseId);
-        } catch {
-          // No grade yet
-        }
-
         rosterEntries.push({
           enrollment,
           userName,
           userEmail,
-          courseGrade,
+          courseGrade: gradesByUserId.get(enrollment.userId) ?? null,
         });
       }
 
@@ -143,6 +145,9 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
         break;
       case 'status':
         cmp = a.enrollment.status.localeCompare(b.enrollment.status);
+        break;
+      case 'lastActivity':
+        cmp = (a.enrollment.lastAccessedAt || '').localeCompare(b.enrollment.lastAccessedAt || '');
         break;
     }
     return sortDirection === 'asc' ? cmp : -cmp;
@@ -300,19 +305,20 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
               <SortHeader field="completion" label="Completion" className="text-center" />
               <th className="px-6 py-3 font-semibold text-slate-700 text-center">Critical Modules</th>
               <SortHeader field="status" label="Status" className="text-center" />
+              <SortHeader field="lastActivity" label="Last Activity" className="text-center" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
+                <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
                   <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
                   Loading roster...
                 </td>
               </tr>
             ) : sortedEntries.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
+                <td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic">
                   {entries.length === 0
                     ? 'No learners enrolled in this course.'
                     : `No learners matching "${filter}" filter.`}
@@ -399,12 +405,19 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
                     <td className="px-6 py-4 text-center">
                       {getStatusBadge(entry)}
                     </td>
+
+                    {/* Last Activity */}
+                    <td className="px-6 py-4 text-center text-xs text-slate-500 font-mono">
+                      {entry.enrollment.lastAccessedAt
+                        ? formatDate(entry.enrollment.lastAccessedAt)
+                        : '--'}
+                    </td>
                   </tr>
 
                   {/* Expanded GradeBreakdown */}
                   {expandedUserId === entry.enrollment.userId && entry.courseGrade && (
                     <tr>
-                      <td colSpan={6} className="px-8 py-6 bg-slate-50">
+                      <td colSpan={7} className="px-8 py-6 bg-slate-50">
                         <GradeBreakdown calculation={entry.courseGrade} />
                       </td>
                     </tr>

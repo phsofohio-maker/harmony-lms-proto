@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { User, CourseGradeDoc } from '../functions/src/types';
+import { User } from '../functions/src/types';
 import { useCourses } from '../hooks/useCourses';
 import { useUserTranscript } from '../hooks/useCourseGrades';
 import { useAuth } from '../contexts/AuthContext';
@@ -106,7 +106,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate }) => {
               return (
                 <GradeSummaryCard
                   key={`${grade.userId}_${grade.courseId}`}
-                  courseGrade={grade as unknown as CourseGradeDoc}
+                  courseGrade={grade}
                   courseTitle={course?.title || 'Unknown Course'}
                   onClick={() => onNavigate('/my-grades')}
                 />
