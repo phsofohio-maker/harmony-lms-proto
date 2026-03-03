@@ -303,6 +303,7 @@ status: EnrollmentStatus;
 enrolledAt?: string;
 completedAt?: string;
 quizAnswers?: Record<string, any[]>;
+quizModuleId?: string;
 lastAccessedAt: string;
 score?: number;
 }

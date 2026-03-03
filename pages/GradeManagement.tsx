@@ -167,6 +167,7 @@ export const GradeManagement: React.FC = () => {
             if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return {}; } }
             return raw;
           })(),
+          quizModuleId: data.quizModuleId || '',
         };
 
         // Resolve user name
@@ -195,25 +196,27 @@ export const GradeManagement: React.FC = () => {
           if (!courseDoc.empty) {
             courseTitle = courseDoc.docs[0].data().title || 'Untitled Course';
           }
-          // Find the module that contains quiz blocks (prioritize modules with short-answer)
-          const modulesSnap = await getDocs(
-            collection(db, `courses/${data.courseId}/modules`)
-          );
-          if (!modulesSnap.empty) {
-            // Try to find a module with quiz blocks first
-            for (const modDoc of modulesSnap.docs) {
-              const blocksSnap = await getDocs(
-                collection(db, `courses/${data.courseId}/modules/${modDoc.id}/blocks`)
-              );
-              const hasQuiz = blocksSnap.docs.some(b => b.data().type === 'quiz');
-              if (hasQuiz) {
-                moduleId = modDoc.id;
-                break;
+          // Use stored quizModuleId if available, otherwise scan for first module with quiz blocks
+          if (data.quizModuleId) {
+            moduleId = data.quizModuleId;
+          } else {
+            const modulesSnap = await getDocs(
+              collection(db, `courses/${data.courseId}/modules`)
+            );
+            if (!modulesSnap.empty) {
+              for (const modDoc of modulesSnap.docs) {
+                const blocksSnap = await getDocs(
+                  collection(db, `courses/${data.courseId}/modules/${modDoc.id}/blocks`)
+                );
+                const hasQuiz = blocksSnap.docs.some(b => b.data().type === 'quiz');
+                if (hasQuiz) {
+                  moduleId = modDoc.id;
+                  break;
+                }
               }
-            }
-            // Fallback to first module if no quiz blocks found
-            if (!moduleId) {
-              moduleId = modulesSnap.docs[0].id;
+              if (!moduleId) {
+                moduleId = modulesSnap.docs[0].id;
+              }
             }
           }
         } catch {
@@ -628,6 +631,22 @@ export const GradeManagement: React.FC = () => {
                     </div>
                   );
                 })}
+
+                {/* Diagnostic: show when answer data exists but block IDs don't match */}
+                {quizBlocks.every(block => !enrollment.quizAnswers?.[block.id]?.length)
+                  && enrollment.quizAnswers && Object.keys(enrollment.quizAnswers).length > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg text-sm">
+                    <p className="font-medium text-amber-800">
+                      Answer data exists but does not match the loaded module&apos;s blocks.
+                    </p>
+                    <p className="text-amber-600 text-xs mt-1">
+                      Stored block IDs: {Object.keys(enrollment.quizAnswers).join(', ')}
+                    </p>
+                    <p className="text-amber-600 text-xs">
+                      Module block IDs: {quizBlocks.map(b => b.id).join(', ')}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
