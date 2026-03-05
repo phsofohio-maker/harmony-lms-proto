@@ -39,7 +39,7 @@ import { Loader2, AlertCircle } from 'lucide-react';
 const LoadingScreen: React.FC = () => (
   <div className="min-h-screen bg-slate-50 flex items-center justify-center">
     <div className="text-center">
-      <Loader2 className="h-12 w-12 text-brand-600 animate-spin mx-auto" />
+      <Loader2 className="h-12 w-12 text-[var(--color-brand-primary)] animate-spin mx-auto" />
       <p className="mt-4 text-slate-500 font-medium">Loading...</p>
     </div>
   </div>

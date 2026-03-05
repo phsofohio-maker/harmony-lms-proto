@@ -8,21 +8,21 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({ 
-  children, 
-  className, 
-  variant = 'primary', 
-  size = 'md', 
-  isLoading, 
+export const Button: React.FC<ButtonProps> = ({
+  children,
+  className,
+  variant = 'primary',
+  size = 'md',
+  isLoading,
   disabled,
-  ...props 
+  ...props
 }) => {
   const variants = {
-    primary: 'bg-brand-600 text-white hover:bg-brand-700 shadow-sm',
-    secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200',
-    danger: 'bg-critical-600 text-white hover:bg-critical-700 shadow-sm',
-    ghost: 'bg-transparent hover:bg-slate-100 text-slate-700',
-    outline: 'border border-slate-300 bg-transparent hover:bg-slate-50 text-slate-700'
+    primary:   'bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-mid)] text-white shadow-sm',
+    secondary: 'border border-[var(--color-brand-primary)] text-[var(--color-brand-primary)] hover:bg-[var(--color-surface-muted)] bg-transparent',
+    danger:    'bg-[var(--color-status-danger)] hover:opacity-90 text-white shadow-sm',
+    ghost:     'text-[var(--color-brand-primary)] hover:bg-[var(--color-surface-muted)] bg-transparent',
+    outline:   'border border-slate-300 bg-transparent hover:bg-slate-50 text-slate-700'
   };
 
   const sizes = {
@@ -34,7 +34,7 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-mid)] disabled:pointer-events-none disabled:opacity-50',
         variants[variant],
         sizes[size],
         className

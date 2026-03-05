@@ -52,12 +52,12 @@ export const Login: React.FC = () => {
       
       <div className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-brand-600 to-brand-700 p-8 text-center">
+        <div className="bg-gradient-to-r from-[var(--color-brand-primary)] to-[var(--color-brand-dark)] p-8 text-center">
           <div className="h-16 w-16 bg-white/20 backdrop-blur rounded-full flex items-center justify-center mx-auto mb-4">
             <Lock className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-white">Harmony Health LMS</h1>
-          <p className="text-brand-100 mt-2 text-sm">Secure Clinical Training Platform</p>
+          <p className="text-[var(--color-text-on-dark)] opacity-80 mt-2 text-sm">Secure Clinical Training Platform</p>
         </div>
         
         {/* Form */}
@@ -86,7 +86,7 @@ export const Login: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 className={cn(
                   "w-full pl-10 pr-4 py-3 border rounded-lg transition-colors",
-                  "focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500",
+                  "focus:outline-none focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)]",
                   "bg-white text-slate-900 placeholder:text-slate-400",
                   displayError ? "border-red-300" : "border-slate-300"
                 )}
@@ -111,7 +111,7 @@ export const Login: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 className={cn(
                   "w-full pl-10 pr-12 py-3 border rounded-lg transition-colors",
-                  "focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500",
+                  "focus:outline-none focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)]",
                   "bg-white text-slate-900 placeholder:text-slate-400",
                   displayError ? "border-red-300" : "border-slate-300"
                 )}

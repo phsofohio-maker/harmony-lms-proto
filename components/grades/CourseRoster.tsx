@@ -169,13 +169,13 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
 
   const SortHeader: React.FC<{ field: SortField; label: string; className?: string }> = ({ field, label, className }) => (
     <th
-      className={cn('px-6 py-3 font-semibold text-slate-700 cursor-pointer hover:text-brand-600 select-none', className)}
+      className={cn('px-6 py-3 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest cursor-pointer hover:opacity-80 select-none', className)}
       onClick={() => handleSort(field)}
     >
       <span className="flex items-center gap-1">
         {label}
         {sortField === field && (
-          <span className="text-brand-600">{sortDirection === 'asc' ? '\u2191' : '\u2193'}</span>
+          <span className="text-[var(--color-brand-primary)]">{sortDirection === 'asc' ? '\u2191' : '\u2193'}</span>
         )}
       </span>
     </th>
@@ -214,7 +214,7 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[var(--color-status-info)] text-white">
         In Progress
       </span>
     );
@@ -278,8 +278,8 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
             className={cn(
               'px-3 py-1 text-xs font-bold rounded-md transition-all',
               filter === tab.key
-                ? 'bg-brand-600 text-white'
-                : 'text-slate-500 hover:text-brand-600 bg-white border border-slate-200'
+                ? 'bg-[var(--color-brand-primary)] text-white'
+                : 'text-slate-500 hover:text-[var(--color-brand-primary)] bg-white border border-slate-200'
             )}
           >
             {tab.label}
@@ -298,13 +298,13 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
       {/* Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-[var(--color-brand-dark)] border-b border-[var(--color-brand-border)]">
             <tr>
               <th className="w-8 px-4 py-3" />
               <SortHeader field="name" label="Learner" />
               <SortHeader field="score" label="Overall Score" className="text-center" />
               <SortHeader field="completion" label="Completion" className="text-center" />
-              <th className="px-6 py-3 font-semibold text-slate-700 text-center">Critical Modules</th>
+              <th className="px-6 py-3 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest text-center">Critical Modules</th>
               <SortHeader field="status" label="Status" className="text-center" />
               <SortHeader field="lastActivity" label="Last Activity" className="text-center" />
             </tr>
@@ -335,7 +335,7 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
                     {/* Expand Arrow */}
                     <td className="px-4 py-4">
                       {expandedUserId === entry.enrollment.userId ? (
-                        <ChevronDown className="h-4 w-4 text-brand-500" />
+                        <ChevronDown className="h-4 w-4 text-[var(--color-brand-primary)]" />
                       ) : (
                         <ChevronRight className="h-4 w-4 text-slate-400" />
                       )}
@@ -369,7 +369,7 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
                             <div
                               className={cn(
                                 'h-full rounded-full',
-                                entry.courseGrade.completionPercent === 100 ? 'bg-green-500' : 'bg-brand-500'
+                                entry.courseGrade.completionPercent === 100 ? 'bg-green-500' : 'bg-[var(--color-brand-primary)]'
                               )}
                               style={{ width: `${entry.courseGrade.completionPercent}%` }}
                             />

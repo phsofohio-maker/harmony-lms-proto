@@ -28,7 +28,7 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ onNavigate }) => {
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8 flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Course Catalog</h1>
+          <h1 className="font-display italic text-2xl text-[var(--color-brand-primary)]">Course Catalog</h1>
           <p className="text-slate-500 mt-1">
             Browse and enroll in available clinical training modules.
           </p>
@@ -58,7 +58,7 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ onNavigate }) => {
       {/* Loading State */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 text-brand-600 animate-spin" />
+          <Loader2 className="h-8 w-8 text-[var(--color-brand-primary)] animate-spin" />
         </div>
       ) : courses.length === 0 ? (
         <div className="text-center py-20">
@@ -82,7 +82,7 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ onNavigate }) => {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-500 to-brand-700">
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-dark)]">
                     <BookOpen className="h-12 w-12 text-white/50" />
                   </div>
                 )}
@@ -101,7 +101,7 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ onNavigate }) => {
               
               {/* Content */}
               <div className="p-5 flex-1 flex flex-col">
-                <h3 className="font-bold text-lg text-slate-900 mb-2 leading-tight group-hover:text-brand-600 transition-colors">
+                <h3 className="font-bold text-lg text-slate-900 mb-2 leading-tight group-hover:text-[var(--color-brand-primary)] transition-colors">
                   {course.title}
                 </h3>
                 <p className="text-sm text-slate-500 mb-4 line-clamp-2 flex-1">
@@ -114,14 +114,14 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ onNavigate }) => {
                       <Clock className="h-3.5 w-3.5" />
                       <span>{course.modules?.length || 0} modules</span>
                     </div>
-                    <div className="flex items-center gap-1 text-brand-600 font-medium">
+                    <div className="flex items-center gap-1 text-[var(--color-brand-primary)] font-medium">
                       <Award className="h-3.5 w-3.5" />
                       <span>{course.ceCredits} CEU</span>
                     </div>
                   </div>
                   
                   <Button 
-                    className="w-full justify-between group-hover:bg-brand-700" 
+                    className="w-full justify-between"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleViewCourse(course.id);

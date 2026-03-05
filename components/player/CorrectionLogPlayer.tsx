@@ -135,7 +135,7 @@ export const CorrectionLogPlayer: React.FC<CorrectionLogPlayerProps> = ({
 
               {/* Corrections */}
               {corrections.map(corr => (
-                <div key={corr.id} className="mt-3 pl-4 border-l-2 border-red-300">
+                <div key={corr.id} className="mt-3 pl-4 border-l-4 border-l-[var(--color-status-warning)] bg-[#FFF8F0] font-mono rounded-sm">
                   <p className="text-sm text-slate-800 leading-relaxed">{corr.text}</p>
                   <p className="text-[10px] text-red-600 mt-1 flex items-center gap-1">
                     <Clock className="h-3 w-3" />
@@ -146,9 +146,9 @@ export const CorrectionLogPlayer: React.FC<CorrectionLogPlayerProps> = ({
 
               {/* Inline correction editor */}
               {editingId === entry.id && (
-                <div className="mt-3 pl-4 border-l-2 border-brand-300 space-y-2">
+                <div className="mt-3 pl-4 border-l-2 border-[var(--color-brand-border)] space-y-2">
                   <textarea
-                    className="w-full text-sm p-3 border border-brand-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-400 resize-none bg-brand-50"
+                    className="w-full text-sm p-3 border border-[var(--color-brand-border)] rounded-lg outline-none focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)] resize-none bg-[var(--color-surface-muted)]"
                     rows={3}
                     value={correctionText}
                     onChange={(e) => setCorrectionText(e.target.value)}
@@ -165,7 +165,7 @@ export const CorrectionLogPlayer: React.FC<CorrectionLogPlayerProps> = ({
                     <button
                       onClick={handleSubmitCorrection}
                       disabled={!correctionText.trim()}
-                      className="px-3 py-1.5 text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 rounded flex items-center gap-1 disabled:opacity-50"
+                      className="px-3 py-1.5 text-xs font-bold text-white bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-mid)] rounded flex items-center gap-1 disabled:opacity-50"
                     >
                       <Check className="h-3 w-3" /> Submit Correction
                     </button>

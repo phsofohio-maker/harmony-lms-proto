@@ -48,7 +48,7 @@ const getCompetencyLevel = (score: number): CompetencyLevel => {
 
 const competencyColors: Record<CompetencyLevel, string> = {
   'Mastery': 'bg-green-100 text-green-700 border-green-200',
-  'Competent': 'bg-blue-100 text-blue-700 border-blue-200',
+  'Competent': 'bg-[var(--color-status-info)] text-white border-transparent',
   'Developing': 'bg-amber-100 text-amber-700 border-amber-200',
   'Not Competent': 'bg-red-100 text-red-700 border-red-200',
 };
@@ -60,7 +60,7 @@ export const GradeBreakdown: React.FC<GradeBreakdownProps> = ({
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="bg-slate-900 px-6 py-4 flex justify-between items-center">
+      <div className="bg-[var(--color-brand-dark)] px-6 py-4 flex justify-between items-center">
         <h3 className="text-white font-bold text-sm">Module Grade Breakdown</h3>
         <span className="text-slate-400 text-xs font-medium">
           {calculation.gradedModules}/{calculation.totalModules} modules graded
@@ -70,18 +70,18 @@ export const GradeBreakdown: React.FC<GradeBreakdownProps> = ({
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-[var(--color-brand-dark)] border-b border-[var(--color-brand-border)]">
             <tr>
-              <th className="px-6 py-3 font-semibold text-slate-700">Module</th>
-              <th className="px-6 py-3 font-semibold text-slate-700 text-center">Score</th>
+              <th className="px-6 py-3 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Module</th>
+              <th className="px-6 py-3 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest text-center">Score</th>
               {showWeights && (
                 <>
-                  <th className="px-6 py-3 font-semibold text-slate-700 text-center">Weight</th>
-                  <th className="px-6 py-3 font-semibold text-slate-700 text-center">Weighted</th>
+                  <th className="px-6 py-3 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest text-center">Weight</th>
+                  <th className="px-6 py-3 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest text-center">Weighted</th>
                 </>
               )}
-              <th className="px-6 py-3 font-semibold text-slate-700 text-center">Critical</th>
-              <th className="px-6 py-3 font-semibold text-slate-700 text-center">Status</th>
+              <th className="px-6 py-3 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest text-center">Critical</th>
+              <th className="px-6 py-3 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest text-center">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -179,7 +179,7 @@ export const GradeBreakdown: React.FC<GradeBreakdownProps> = ({
                 <circle cx="28" cy="28" r="22" fill="none" stroke="#e2e8f0" strokeWidth="4" />
                 <circle
                   cx="28" cy="28" r="22" fill="none"
-                  stroke={calculation.completionPercent === 100 ? '#16a34a' : '#2563eb'}
+                  stroke={calculation.completionPercent === 100 ? 'var(--color-status-success)' : 'var(--color-brand-primary)'}
                   strokeWidth="4" strokeLinecap="round"
                   strokeDasharray={2 * Math.PI * 22}
                   strokeDashoffset={2 * Math.PI * 22 - (calculation.completionPercent / 100) * 2 * Math.PI * 22}

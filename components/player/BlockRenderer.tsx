@@ -31,7 +31,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onQuizAnswe
       }
 
       const styles = {
-        'callout-info': { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-900', icon: Info, iconColor: 'text-blue-600' },
+        'callout-info': { bg: 'bg-[#EDF5F8]', border: 'border-[var(--color-status-info)]', text: 'text-[var(--color-status-info)]', icon: Info, iconColor: 'text-[var(--color-status-info)]' },
         'callout-warning': { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-900', icon: AlertTriangle, iconColor: 'text-amber-600' },
         'callout-critical': { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-900', icon: AlertOctagon, iconColor: 'text-red-600' },
       }[variant];
@@ -84,7 +84,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onQuizAnswe
              {vidData.transcript && (
                <button 
                  onClick={() => setShowTranscript(!showTranscript)}
-                 className="text-xs font-medium text-brand-600 flex items-center gap-1 hover:text-brand-800"
+                 className="text-xs font-medium text-[var(--color-brand-primary)] flex items-center gap-1 hover:text-[var(--color-brand-mid)]"
                >
                  {showTranscript ? <ChevronUp className="h-3 w-3"/> : <ChevronDown className="h-3 w-3"/>}
                  {showTranscript ? 'Hide Transcript' : 'Show Transcript'}
@@ -104,13 +104,13 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onQuizAnswe
       const blockAnswers = answers?.[block.id] || [];
 
       return (
-        <div className="my-8 border border-brand-200 rounded-xl overflow-hidden bg-white shadow-sm">
-          <div className="bg-brand-50 px-6 py-4 border-b border-brand-100 flex justify-between items-center">
-             <h3 className="font-bold text-brand-900 flex items-center gap-2">
-               <CheckCircle className="h-5 w-5 text-brand-600" />
+        <div className="my-8 border border-[var(--color-brand-border)] rounded-xl overflow-hidden bg-white shadow-sm">
+          <div className="bg-[var(--color-surface-muted)] px-6 py-4 border-b border-[var(--color-brand-border)] flex justify-between items-center">
+             <h3 className="font-bold text-[var(--color-brand-dark)] flex items-center gap-2">
+               <CheckCircle className="h-5 w-5 text-[var(--color-brand-primary)]" />
                {quizData.title || 'Knowledge Check'}
              </h3>
-             <span className="text-xs font-bold text-brand-600 bg-white px-2 py-1 rounded border border-brand-200">
+             <span className="text-xs font-bold text-[var(--color-brand-primary)] bg-white px-2 py-1 rounded border border-[var(--color-brand-border)]">
                Pass Score: {quizData.passingScore}%
              </span>
           </div>
@@ -133,17 +133,17 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onQuizAnswe
                           className={cn(
                             "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all",
                             isSelected
-                              ? "bg-brand-50 border-brand-500 ring-1 ring-brand-500"
-                              : "bg-white border-slate-200 hover:border-brand-300 hover:bg-slate-50"
+                              ? "bg-[var(--color-surface-muted)] border-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)]"
+                              : "bg-white border-slate-200 hover:border-[var(--color-brand-border)] hover:bg-slate-50"
                           )}
                         >
                           <div className={cn(
                             "h-4 w-4 rounded-full border flex items-center justify-center shrink-0",
-                            isSelected ? "border-brand-600 bg-brand-600" : "border-slate-300 bg-white"
+                            isSelected ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]" : "border-slate-300 bg-white"
                           )}>
                             {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
                           </div>
-                          <span className={cn("text-sm", isSelected ? "text-brand-900 font-medium" : "text-slate-600")}>
+                          <span className={cn("text-sm", isSelected ? "text-[var(--color-brand-dark)] font-medium" : "text-slate-600")}>
                             {opt}
                           </span>
                           <input
@@ -169,17 +169,17 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onQuizAnswe
                           className={cn(
                             "flex items-center gap-3 px-6 py-3 rounded-lg border cursor-pointer transition-all flex-1",
                             isSelected
-                              ? "bg-brand-50 border-brand-500 ring-1 ring-brand-500"
-                              : "bg-white border-slate-200 hover:border-brand-300 hover:bg-slate-50"
+                              ? "bg-[var(--color-surface-muted)] border-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)]"
+                              : "bg-white border-slate-200 hover:border-[var(--color-brand-border)] hover:bg-slate-50"
                           )}
                         >
                           <div className={cn(
                             "h-4 w-4 rounded-full border flex items-center justify-center shrink-0",
-                            isSelected ? "border-brand-600 bg-brand-600" : "border-slate-300 bg-white"
+                            isSelected ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]" : "border-slate-300 bg-white"
                           )}>
                             {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
                           </div>
-                          <span className={cn("text-sm font-medium", isSelected ? "text-brand-900" : "text-slate-600")}>
+                          <span className={cn("text-sm font-medium", isSelected ? "text-[var(--color-brand-dark)]" : "text-slate-600")}>
                             {label}
                           </span>
                           <input
@@ -202,8 +202,8 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onQuizAnswe
                       className={cn(
                         "w-full p-3 rounded-lg border text-sm outline-none transition-all",
                         blockAnswers[qIdx]
-                          ? "border-brand-300 bg-brand-50 ring-1 ring-brand-200"
-                          : "border-slate-200 bg-white focus:border-brand-400 focus:ring-1 focus:ring-brand-200"
+                          ? "border-[var(--color-brand-primary)] bg-[var(--color-surface-muted)] ring-1 ring-[var(--color-brand-border)]"
+                          : "border-slate-200 bg-white focus:border-[var(--color-brand-mid)] focus:ring-1 focus:ring-[var(--color-brand-border)]"
                       )}
                       placeholder="Type your answer here..."
                       value={typeof blockAnswers[qIdx] === 'string' ? blockAnswers[qIdx] : ''}
@@ -234,8 +234,8 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onQuizAnswe
                             className={cn(
                               "flex-1 p-3 rounded-lg border text-sm outline-none transition-all cursor-pointer",
                               selectedValue
-                                ? "border-brand-300 bg-brand-50 text-brand-900 ring-1 ring-brand-200"
-                                : "border-slate-200 bg-white text-slate-500 focus:border-brand-400"
+                                ? "border-[var(--color-brand-primary)] bg-[var(--color-surface-muted)] text-[var(--color-brand-dark)] ring-1 ring-[var(--color-brand-border)]"
+                                : "border-slate-200 bg-white text-slate-500 focus:border-[var(--color-brand-mid)]"
                             )}
                             value={selectedValue}
                             onChange={(e) => {
@@ -271,8 +271,8 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onQuizAnswe
                         className={cn(
                           "w-full p-3 rounded-lg border text-sm outline-none transition-all resize-y min-h-[120px]",
                           meetsMinimum
-                            ? "border-brand-300 bg-brand-50 ring-1 ring-brand-200"
-                            : "border-slate-200 bg-white focus:border-brand-400 focus:ring-1 focus:ring-brand-200"
+                            ? "border-[var(--color-brand-primary)] bg-[var(--color-surface-muted)] ring-1 ring-[var(--color-brand-border)]"
+                            : "border-slate-200 bg-white focus:border-[var(--color-brand-mid)] focus:ring-1 focus:ring-[var(--color-brand-border)]"
                         )}
                         placeholder="Write your response here (minimum 20 characters)..."
                         value={answerText}

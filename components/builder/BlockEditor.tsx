@@ -115,7 +115,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
               previous type (e.g. MC options showing on a fill-blank).
             */}
             <select
-              className="text-xs font-bold text-brand-600 bg-transparent outline-none border-none p-0 cursor-pointer uppercase"
+              className="text-xs font-bold text-[var(--color-brand-primary)] bg-transparent outline-none border-none p-0 cursor-pointer uppercase"
               value={q.type || 'multiple-choice'}
               onChange={(e) => {
                 const newType = e.target.value as QuizQuestionType;
@@ -197,10 +197,10 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
                     type="radio"
                     checked={q.correctAnswer === oIdx}
                     onChange={() => updateQuestion({ correctAnswer: oIdx })}
-                    className="text-brand-600"
+                    className="text-[var(--color-brand-primary)]"
                   />
                   <input
-                    className="flex-1 text-xs p-1 border-b border-transparent focus:border-brand-300 outline-none text-slate-600"
+                    className="flex-1 text-xs p-1 border-b border-transparent focus:border-[var(--color-brand-mid)] outline-none text-slate-600"
                     value={opt}
                     onChange={(e) => {
                       const newOpts = [...q.options];
@@ -228,7 +228,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
               ))}
               <button
                 onClick={() => updateQuestion({ options: [...(q.options || []), 'New Option'] })}
-                className="text-[10px] font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1"
+                className="text-[10px] font-bold text-[var(--color-brand-primary)] hover:text-[var(--color-brand-mid)] flex items-center gap-1"
               >
                 <Plus className="h-3 w-3" /> Add Option
               </button>
@@ -274,7 +274,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
               {(q.matchingPairs || []).map((pair, pIdx) => (
                 <div key={pIdx} className="flex items-center gap-2">
                   <input
-                    className="flex-1 text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:border-brand-300 outline-none"
+                    className="flex-1 text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:border-[var(--color-brand-mid)] outline-none"
                     placeholder={`Left ${pIdx + 1}`}
                     value={pair.left}
                     onChange={(e) => {
@@ -285,7 +285,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
                   />
                   <span className="text-slate-300 text-xs">→</span>
                   <input
-                    className="flex-1 text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:border-brand-300 outline-none"
+                    className="flex-1 text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:border-[var(--color-brand-mid)] outline-none"
                     placeholder={`Right ${pIdx + 1}`}
                     value={pair.right}
                     onChange={(e) => {
@@ -309,7 +309,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
                 onClick={() => updateQuestion({
                   matchingPairs: [...(q.matchingPairs || []), { left: '', right: '' }],
                 })}
-                className="text-[10px] font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1"
+                className="text-[10px] font-bold text-[var(--color-brand-primary)] hover:text-[var(--color-brand-mid)] flex items-center gap-1"
               >
                 <Plus className="h-3 w-3" /> Add Pair
               </button>
@@ -323,7 +323,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
                 Correct Answer
               </label>
               <input
-                className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:border-brand-300 outline-none"
+                className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:border-[var(--color-brand-mid)] outline-none"
                 value={typeof q.correctAnswer === 'string' ? q.correctAnswer : ''}
                 placeholder="The exact word or phrase the learner must enter..."
                 onChange={(e) => updateQuestion({ correctAnswer: e.target.value })}
@@ -343,7 +343,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
                   Response Guidelines / Rubric
                 </label>
                 <textarea
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:border-brand-300 outline-none min-h-[80px]"
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:border-[var(--color-brand-mid)] outline-none min-h-[80px]"
                   value={typeof q.correctAnswer === 'string' ? q.correctAnswer : ''}
                   placeholder="Describe what should be included in the learner's response..."
                   onChange={(e) => updateQuestion({ correctAnswer: e.target.value })}
@@ -383,7 +383,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
           <div className="space-y-2">
             <input
               type="text"
-              className="w-full px-0 py-2 text-2xl font-bold border-b-2 border-slate-100 focus:border-brand-500 outline-none bg-transparent placeholder:text-slate-300 text-slate-900"
+              className="w-full px-0 py-2 text-2xl font-bold border-b-2 border-slate-100 focus:border-[var(--color-brand-mid)] outline-none bg-transparent placeholder:text-slate-300 text-slate-900"
               value={(block.data as TextBlockData).content || ''}
               onChange={(e) => handleChange('content', e.target.value)}
               placeholder="Heading Title"
@@ -400,7 +400,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
             <div className="flex gap-2">
               {[
                 { id: 'paragraph', icon: FileText, label: 'Text', color: 'bg-slate-100 text-slate-700' },
-                { id: 'callout-info', icon: Info, label: 'Info', color: 'bg-blue-100 text-blue-700' },
+                { id: 'callout-info', icon: Info, label: 'Info', color: 'bg-[#EDF5F8] text-[var(--color-status-info)]' },
                 { id: 'callout-warning', icon: AlertTriangle, label: 'Warning', color: 'bg-amber-100 text-amber-700' },
                 { id: 'callout-critical', icon: AlertOctagon, label: 'Critical', color: 'bg-red-100 text-red-700' },
               ].map(opt => (
@@ -422,10 +422,10 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
 
             <div className={cn(
               'rounded-md border transition-colors bg-white',
-              currentVariant === 'callout-info' && 'border-l-4 border-l-blue-500 border-slate-200',
+              currentVariant === 'callout-info' && 'border-l-4 border-l-[var(--color-status-info)] border-slate-200',
               currentVariant === 'callout-warning' && 'border-l-4 border-l-amber-500 border-slate-200',
               currentVariant === 'callout-critical' && 'border-l-4 border-l-red-500 border-slate-200',
-              currentVariant === 'paragraph' && 'border-slate-300 focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-brand-500'
+              currentVariant === 'paragraph' && 'border-slate-300 focus-within:shadow-[var(--shadow-glow)] focus-within:border-[var(--color-brand-mid)]'
             )}>
               {renderRichTextToolbar()}
               <textarea
@@ -455,7 +455,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
                 </div>
               ) : (
                 <div className="py-4">
-                  <div className="mx-auto h-12 w-12 text-slate-300 group-hover:text-brand-500 transition-colors mb-2">
+                  <div className="mx-auto h-12 w-12 text-slate-300 group-hover:text-[var(--color-brand-primary)] transition-colors mb-2">
                     <ImageIcon className="h-full w-full" />
                   </div>
                   <p className="text-sm font-medium text-slate-700">Click to upload or drag and drop</p>
@@ -474,7 +474,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Caption</label>
                 <input
-                  className="w-full text-sm p-2 border border-slate-300 rounded focus:ring-1 focus:ring-brand-500 outline-none bg-white text-slate-900"
+                  className="w-full text-sm p-2 border border-slate-300 rounded focus:ring-1 focus:ring-[var(--color-brand-mid)] outline-none bg-white text-slate-900"
                   placeholder="Visible below image"
                   value={imgData.caption || ''}
                   onChange={(e) => handleChange('caption', e.target.value)}
@@ -483,7 +483,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Alt Text</label>
                 <input
-                  className="w-full text-sm p-2 border border-slate-300 rounded focus:ring-1 focus:ring-brand-500 outline-none bg-white text-slate-900"
+                  className="w-full text-sm p-2 border border-slate-300 rounded focus:ring-1 focus:ring-[var(--color-brand-mid)] outline-none bg-white text-slate-900"
                   placeholder="Accessibility description"
                   value={imgData.altText || ''}
                   onChange={(e) => handleChange('altText', e.target.value)}
@@ -506,7 +506,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
               <div className="col-span-8">
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Title</label>
                 <input
-                  className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-brand-500 outline-none text-sm bg-white text-slate-900"
+                  className="w-full p-2 border border-slate-300 rounded focus:shadow-[var(--shadow-glow)] outline-none text-sm bg-white text-slate-900"
                   value={vidData.title || ''}
                   onChange={(e) => handleChange('title', e.target.value)}
                   placeholder="Video title"
@@ -516,7 +516,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Duration (min)</label>
                 <input
                   type="number"
-                  className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-brand-500 outline-none text-sm bg-white text-slate-900"
+                  className="w-full p-2 border border-slate-300 rounded focus:shadow-[var(--shadow-glow)] outline-none text-sm bg-white text-slate-900"
                   value={vidData.duration ? vidData.duration / 60 : 0}
                   onChange={(e) => handleChange('duration', parseInt(e.target.value) * 60)}
                 />
@@ -526,7 +526,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Embed URL</label>
               <input
                 type="text"
-                className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-brand-500 outline-none font-mono text-sm text-brand-600 bg-slate-50"
+                className="w-full p-2 border border-slate-300 rounded focus:shadow-[var(--shadow-glow)] outline-none font-mono text-sm text-[var(--color-brand-primary)] bg-slate-50"
                 value={vidData.url || ''}
                 onChange={(e) => handleChange('url', e.target.value)}
                 placeholder="https://www.youtube.com/embed/..."
@@ -538,7 +538,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
                 <span className="ml-2 text-slate-400 font-normal normal-case italic">(Recommended for compliance)</span>
               </label>
               <textarea
-                className="w-full p-2 border border-slate-300 rounded focus:ring-1 focus:ring-brand-500 outline-none text-sm h-20 bg-white text-slate-900"
+                className="w-full p-2 border border-slate-300 rounded focus:ring-1 focus:ring-[var(--color-brand-mid)] outline-none text-sm h-20 bg-white text-slate-900"
                 placeholder="Paste video transcript here..."
                 value={vidData.transcript || ''}
                 onChange={(e) => handleChange('transcript', e.target.value)}
@@ -555,16 +555,16 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
         return (
           <div className="space-y-4">
             {/* Assessment header — unchanged */}
-            <div className="bg-gradient-to-r from-brand-50 to-white p-4 rounded border border-brand-100 flex justify-between items-center">
+            <div className="bg-gradient-to-r from-[var(--color-surface-muted)] to-white p-4 rounded border border-[var(--color-brand-border)] flex justify-between items-center">
               <div>
-                <h4 className="text-sm font-bold text-brand-900">Assessment Configuration</h4>
-                <p className="text-xs text-brand-600">Configure passing requirements for this block</p>
+                <h4 className="text-sm font-bold text-[var(--color-brand-dark)]">Assessment Configuration</h4>
+                <p className="text-xs text-[var(--color-brand-primary)]">Configure passing requirements for this block</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-slate-600 uppercase">Pass Score:</span>
                 <input
                   type="number"
-                  className="w-16 p-1 text-sm border border-brand-200 rounded text-center font-bold bg-white text-slate-900"
+                  className="w-16 p-1 text-sm border border-[var(--color-brand-border)] rounded text-center font-bold bg-white text-slate-900"
                   value={quizData.passingScore || 80}
                   onChange={(e) => handleChange('passingScore', parseInt(e.target.value))}
                 />
@@ -583,7 +583,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
             <Button
               size="sm"
               variant="outline"
-              className="w-full border-dashed border-slate-300 text-slate-500 hover:border-brand-400 hover:text-brand-600"
+              className="w-full border-dashed border-slate-300 text-slate-500 hover:border-[var(--color-brand-mid)] hover:text-[var(--color-brand-primary)]"
               onClick={() => {
                 const newQ: QuizQuestion = {
                   id: Math.random().toString(),
@@ -611,7 +611,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
             <div>
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Log Title</label>
               <input
-                className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-brand-500 outline-none text-sm bg-white text-slate-900"
+                className="w-full p-2 border border-slate-300 rounded focus:shadow-[var(--shadow-glow)] outline-none text-sm bg-white text-slate-900"
                 value={logData.title || ''}
                 onChange={(e) => handleChange('title', e.target.value)}
                 placeholder="e.g., Patient Assessment Notes"
@@ -628,7 +628,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
                 {(logData.entries || []).map((entry, idx) => (
                   <div key={entry.id || idx} className="flex items-start gap-2">
                     <textarea
-                      className="flex-1 text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:border-brand-300 outline-none resize-none"
+                      className="flex-1 text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:border-[var(--color-brand-mid)] outline-none resize-none"
                       rows={2}
                       value={entry.text}
                       placeholder={`Entry ${idx + 1} — e.g., "Patient vitals: BP 120/80, HR 78..."`}
@@ -659,7 +659,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
                   };
                   handleChange('entries', [...(logData.entries || []), newEntry]);
                 }}
-                className="text-[10px] font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1 mt-2"
+                className="text-[10px] font-bold text-[var(--color-brand-primary)] hover:text-[var(--color-brand-mid)] flex items-center gap-1 mt-2"
               >
                 <Plus className="h-3 w-3" /> Add Entry
               </button>
@@ -679,7 +679,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
               <div className="col-span-8">
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Exercise Title</label>
                 <input
-                  className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-brand-500 outline-none text-sm bg-white text-slate-900"
+                  className="w-full p-2 border border-slate-300 rounded focus:shadow-[var(--shadow-glow)] outline-none text-sm bg-white text-slate-900"
                   value={objSubjData.title || ''}
                   onChange={(e) => handleChange('title', e.target.value)}
                   placeholder="e.g., Classify the Clinical Data"
@@ -689,7 +689,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Points per Item</label>
                 <input
                   type="number"
-                  className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-brand-500 outline-none text-sm bg-white text-slate-900 text-center font-bold"
+                  className="w-full p-2 border border-slate-300 rounded focus:shadow-[var(--shadow-glow)] outline-none text-sm bg-white text-slate-900 text-center font-bold"
                   value={objSubjData.pointsPerItem || 10}
                   min={1}
                   onChange={(e) => handleChange('pointsPerItem', parseInt(e.target.value) || 1)}
@@ -704,7 +704,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
                 {(objSubjData.items || []).map((item, idx) => (
                   <div key={item.id || idx} className="flex items-center gap-2">
                     <input
-                      className="flex-1 text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:border-brand-300 outline-none"
+                      className="flex-1 text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:border-[var(--color-brand-mid)] outline-none"
                       value={item.text}
                       placeholder={`Item ${idx + 1} — e.g., "Patient reports feeling dizzy"`}
                       onChange={(e) => {
@@ -743,7 +743,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
                   };
                   handleChange('items', [...(objSubjData.items || []), newItem]);
                 }}
-                className="text-[10px] font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1 mt-2"
+                className="text-[10px] font-bold text-[var(--color-brand-primary)] hover:text-[var(--color-brand-mid)] flex items-center gap-1 mt-2"
               >
                 <Plus className="h-3 w-3" /> Add Item
               </button>
@@ -773,7 +773,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
   }[block.type] || Hash;
 
   return (
-    <div className="group border border-slate-200 rounded-lg bg-white shadow-sm transition-all hover:border-brand-300 hover:shadow-md">
+    <div className="group border border-slate-200 rounded-lg bg-white shadow-sm transition-all hover:border-[var(--color-brand-border)] hover:shadow-md">
       <div className="flex items-center justify-between p-2 pl-4 bg-white border-b border-slate-100 rounded-t-lg">
         <div className="flex items-center gap-3">
           <div className="cursor-move p-1 hover:bg-slate-100 rounded text-slate-300 hover:text-slate-500">
@@ -785,8 +785,8 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <button className="text-xs text-slate-400 hover:text-brand-600 px-2 py-1 hover:bg-slate-50 rounded">Settings</button>
-          <button onClick={() => onDelete(block.id)} className="p-1.5 text-slate-400 hover:text-critical-500 hover:bg-critical-50 rounded transition-colors">
+          <button className="text-xs text-slate-400 hover:text-[var(--color-brand-primary)] px-2 py-1 hover:bg-slate-50 rounded">Settings</button>
+          <button onClick={() => onDelete(block.id)} className="p-1.5 text-slate-400 hover:text-[var(--color-status-danger)] hover:bg-[#FFF0F0] rounded transition-colors">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>

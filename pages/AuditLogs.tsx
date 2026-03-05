@@ -28,11 +28,11 @@ import { cn } from '../utils';
 
 // Action type colors
 const getActionColor = (actionType: string): string => {
-  if (actionType.includes('DELETE')) return 'bg-red-100 text-red-700 border-red-200';
-  if (actionType.includes('CREATE')) return 'bg-green-100 text-green-700 border-green-200';
-  if (actionType.includes('UPDATE')) return 'bg-blue-100 text-blue-700 border-blue-200';
+  if (actionType.includes('DELETE')) return 'bg-[var(--color-status-danger)] text-white border-transparent';
+  if (actionType.includes('CREATE')) return 'bg-[var(--color-status-success)] text-white border-transparent';
+  if (actionType.includes('UPDATE')) return 'bg-[var(--color-status-info)] text-white border-transparent';
   if (actionType.includes('LOGIN') || actionType.includes('LOGOUT'))
-    return 'bg-purple-100 text-purple-700 border-purple-200';
+    return 'bg-[var(--color-surface-muted)] text-[var(--color-brand-primary)] border-[var(--color-brand-border)]';
   if (actionType.includes('GRADE')) return 'bg-amber-100 text-amber-700 border-amber-200';
   return 'bg-slate-100 text-slate-700 border-slate-200';
 };
@@ -111,7 +111,7 @@ export const AuditLogs: React.FC = () => {
       <div className="flex justify-between items-start mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Shield className="h-6 w-6 text-brand-600" />
+            <Shield className="h-6 w-6 text-[var(--color-brand-primary)]" />
             System Audit Trail
           </h1>
           <p className="text-slate-500 mt-2 max-w-2xl">
@@ -134,7 +134,7 @@ export const AuditLogs: React.FC = () => {
             placeholder="Search by user, details, or target..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm bg-white text-slate-900"
+            className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)] outline-none text-sm bg-white text-slate-900"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -142,7 +142,7 @@ export const AuditLogs: React.FC = () => {
           <select
             value={filterAction}
             onChange={(e) => setFilterAction(e.target.value)}
-            className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-sm bg-white text-slate-900"
+            className="px-3 py-2 border border-slate-300 rounded-lg focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)] outline-none text-sm bg-white text-slate-900"
           >
             <option value="">All Actions</option>
             {actionTypes.map((type) => (
@@ -168,7 +168,7 @@ export const AuditLogs: React.FC = () => {
       {/* Loading State */}
       {isLoading ? (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-          <Loader2 className="h-8 w-8 text-brand-600 animate-spin mx-auto" />
+          <Loader2 className="h-8 w-8 text-[var(--color-brand-primary)] animate-spin mx-auto" />
           <p className="mt-4 text-slate-500">Loading audit logs...</p>
         </div>
       ) : filteredLogs.length === 0 ? (
@@ -185,25 +185,25 @@ export const AuditLogs: React.FC = () => {
         /* Logs Table */
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-[var(--color-brand-dark)] border-b border-[var(--color-brand-border)]">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">
                   Timestamp
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">
                   Actor
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">
                   Action
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">
                   Details
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                <tr key={log.id} className="even:bg-[var(--color-surface-muted)] hover:bg-[rgba(46,139,64,0.07)] transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 text-sm text-slate-600">
                       <Clock className="h-3.5 w-3.5 text-slate-400" />

@@ -314,7 +314,7 @@ export const CohortManagement: React.FC = () => {
             <input
               type="text"
               placeholder="e.g., Hospice RNs - Q1 2026"
-              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)]"
               value={formData.name}
               onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
             />
@@ -326,7 +326,7 @@ export const CohortManagement: React.FC = () => {
             <textarea
               placeholder="Describe the purpose of this cohort..."
               rows={2}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)] resize-none"
               value={formData.description}
               onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
             />
@@ -337,7 +337,7 @@ export const CohortManagement: React.FC = () => {
             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
               Departments
               {formData.departments.length > 0 && (
-                <span className="ml-2 text-xs font-normal text-brand-600">
+                <span className="ml-2 text-xs font-normal text-[var(--color-brand-primary)]">
                   {formData.departments.length} selected
                 </span>
               )}
@@ -353,7 +353,7 @@ export const CohortManagement: React.FC = () => {
                   className={cn(
                     'px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
                     formData.departments.includes(dept)
-                      ? 'bg-brand-50 border-brand-300 text-brand-700'
+                      ? 'bg-[var(--color-surface-muted)] border-[var(--color-brand-border)] text-[var(--color-brand-primary)]'
                       : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                   )}
                 >
@@ -371,7 +371,7 @@ export const CohortManagement: React.FC = () => {
             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
               Job Titles
               {formData.jobTitles.length > 0 && (
-                <span className="ml-2 text-xs font-normal text-brand-600">
+                <span className="ml-2 text-xs font-normal text-[var(--color-brand-primary)]">
                   {formData.jobTitles.length} selected
                 </span>
               )}
@@ -387,7 +387,7 @@ export const CohortManagement: React.FC = () => {
                   className={cn(
                     'px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
                     formData.jobTitles.includes(title)
-                      ? 'bg-purple-50 border-purple-300 text-purple-700'
+                      ? 'bg-[var(--color-surface-muted)] border-[var(--color-brand-border)] text-[var(--color-brand-primary)]'
                       : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                   )}
                 >
@@ -405,7 +405,7 @@ export const CohortManagement: React.FC = () => {
             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
               Assign Courses
               {formData.courseIds.length > 0 && (
-                <span className="ml-2 text-xs font-normal text-brand-600">
+                <span className="ml-2 text-xs font-normal text-[var(--color-brand-primary)]">
                   {formData.courseIds.length} selected
                 </span>
               )}
@@ -421,13 +421,13 @@ export const CohortManagement: React.FC = () => {
                   className={cn(
                     'w-full p-3 rounded-lg border text-left flex items-center gap-3 transition-all',
                     formData.courseIds.includes(course.id)
-                      ? 'border-brand-500 bg-brand-50'
+                      ? 'border-[var(--color-brand-primary)] bg-[var(--color-surface-muted)]'
                       : 'border-slate-200 hover:border-slate-300'
                   )}
                 >
                   <div className={cn(
                     'h-8 w-8 rounded flex items-center justify-center shrink-0',
-                    formData.courseIds.includes(course.id) ? 'bg-brand-100 text-brand-600' : 'bg-slate-100 text-slate-400'
+                    formData.courseIds.includes(course.id) ? 'bg-[var(--color-surface-muted)] text-[var(--color-brand-primary)]' : 'bg-slate-100 text-slate-400'
                   )}>
                     <BookOpen className="h-4 w-4" />
                   </div>
@@ -436,7 +436,7 @@ export const CohortManagement: React.FC = () => {
                     <p className="text-[10px] text-slate-500">{course.category} &middot; {course.ceCredits} CE Credits</p>
                   </div>
                   {formData.courseIds.includes(course.id) && (
-                    <CheckCircle2 className="h-4 w-4 text-brand-600 shrink-0 ml-auto" />
+                    <CheckCircle2 className="h-4 w-4 text-[var(--color-brand-primary)] shrink-0 ml-auto" />
                   )}
                 </button>
               ))}
@@ -546,11 +546,11 @@ export const CohortManagement: React.FC = () => {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mt-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Eye className="h-5 w-5 text-brand-600" />
+            <Eye className="h-5 w-5 text-[var(--color-brand-primary)]" />
             <h3 className="font-bold text-slate-900">
               Preview: {cohort.name}
             </h3>
-            <span className="px-2 py-0.5 bg-brand-50 text-brand-700 text-xs font-bold rounded-full">
+            <span className="px-2 py-0.5 bg-[var(--color-surface-muted)] text-[var(--color-brand-primary)] text-xs font-bold rounded-full">
               {isLoadingPreview ? '...' : `${previewUsers.length} users`}
             </span>
           </div>
@@ -570,7 +570,7 @@ export const CohortManagement: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {previewUsers.map(u => (
               <div key={u.uid} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
-                <div className="h-8 w-8 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-xs shrink-0">
+                <div className="h-8 w-8 rounded-full bg-[var(--color-brand-mid)] text-[var(--color-text-on-dark)] flex items-center justify-center font-bold text-xs shrink-0">
                   {u.displayName.charAt(0)}
                 </div>
                 <div className="min-w-0">
@@ -601,7 +601,7 @@ export const CohortManagement: React.FC = () => {
       <div className="flex justify-between items-end mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <UsersRound className="h-6 w-6 text-brand-600" />
+            <UsersRound className="h-6 w-6 text-[var(--color-brand-primary)]" />
             Cohort Management
           </h1>
           <p className="text-slate-500 mt-1">
@@ -631,12 +631,12 @@ export const CohortManagement: React.FC = () => {
       {/* Cohort List */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-[var(--color-brand-dark)] border-b border-[var(--color-brand-border)]">
             <tr>
-              <th className="px-6 py-4 font-semibold text-slate-700">Cohort</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">Filter Criteria</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">Courses</th>
-              <th className="px-6 py-4 font-semibold text-slate-700 text-right">Actions</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Cohort</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Filter Criteria</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Courses</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -670,12 +670,12 @@ export const CohortManagement: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
                         {cohort.filterCriteria.departments?.map(d => (
-                          <span key={d} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full">
+                          <span key={d} className="px-2 py-0.5 bg-[var(--color-status-info)] text-white text-[10px] font-bold rounded-full">
                             {d}
                           </span>
                         ))}
                         {cohort.filterCriteria.jobTitles?.map(t => (
-                          <span key={t} className="px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-full">
+                          <span key={t} className="px-2 py-0.5 bg-[var(--color-brand-primary)] text-white text-[10px] font-bold rounded-full">
                             {t}
                           </span>
                         ))}

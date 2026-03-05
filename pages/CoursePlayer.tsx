@@ -353,7 +353,7 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
-          <Loader2 className="h-10 w-10 text-brand-600 animate-spin mx-auto" />
+          <Loader2 className="h-10 w-10 text-[var(--color-brand-primary)] animate-spin mx-auto" />
           <p className="mt-4 text-slate-600 font-medium">Loading module...</p>
         </div>
       </div>
@@ -419,7 +419,7 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
             <div className="mb-6">
               <span className={cn(
                 "px-3 py-1 rounded-full text-sm font-medium",
-                competencyLevel === 'mastery' && "bg-purple-100 text-purple-700",
+                competencyLevel === 'mastery' && "bg-[var(--color-brand-dark)] text-[var(--color-text-on-dark)]",
                 competencyLevel === 'competent' && "bg-green-100 text-green-700",
                 competencyLevel === 'developing' && "bg-yellow-100 text-yellow-700",
                 competencyLevel === 'not_competent' && "bg-red-100 text-red-700"
@@ -468,11 +468,11 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
         <div className="hidden md:flex items-center gap-2">
           <div className="text-right mr-2">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Progress</p>
-            <p className="text-xs font-bold text-brand-600">{completionPercent}%</p>
+            <p className="text-xs font-bold text-[var(--color-brand-primary)]">{completionPercent}%</p>
           </div>
           <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-brand-500 transition-all duration-300" 
+              className="h-full bg-[var(--color-brand-primary)] transition-all duration-300"
               style={{ width: `${completionPercent}%` }}
             />
           </div>
@@ -525,7 +525,7 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
                     ) : (
                       <button
                         onClick={() => handleBlockComplete(block.id)}
-                        className="text-xs text-brand-600 hover:text-brand-800 flex items-center gap-1"
+                        className="text-xs text-[var(--color-brand-primary)] hover:text-[var(--color-brand-mid)] flex items-center gap-1"
                       >
                         <CheckCircle className="h-3 w-3" />
                         Mark as read

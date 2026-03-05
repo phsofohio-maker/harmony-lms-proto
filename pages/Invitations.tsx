@@ -57,7 +57,7 @@ export const Invitations: React.FC = () => {
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-          <UserPlus className="h-6 w-6 text-brand-600" />
+          <UserPlus className="h-6 w-6 text-[var(--color-brand-primary)]" />
           Staff Onboarding
         </h1>
         <p className="text-slate-500 mt-1">Invite your clinical team members to the Harmony training portal.</p>
@@ -75,7 +75,7 @@ export const Invitations: React.FC = () => {
             )}
             
             <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Send className="h-4 w-4 text-brand-500" />
+                <Send className="h-4 w-4 text-[var(--color-brand-primary)]" />
                 Send New Invite
             </h2>
             
@@ -88,7 +88,7 @@ export const Invitations: React.FC = () => {
                         type="email" 
                         required
                         placeholder="e.g. nurse@harmony.health"
-                        className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                        className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm outline-none focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)] transition-all"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                     />
@@ -98,7 +98,7 @@ export const Invitations: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Assign Role</label>
                 <select 
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm outline-none focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)] bg-white"
                     value={role}
                     onChange={(e) => setRole(e.target.value as UserRoleType)}
                 >
@@ -114,7 +114,7 @@ export const Invitations: React.FC = () => {
                 <input 
                     type="text" 
                     placeholder="e.g. Hospice Unit 4"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm outline-none focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)]"
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
                 />
@@ -128,7 +128,7 @@ export const Invitations: React.FC = () => {
 
           <div className="bg-slate-900 p-6 rounded-xl text-white shadow-lg">
              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-brand-500 rounded-lg">
+                <div className="p-2 bg-[var(--color-brand-primary)] rounded-lg">
                     <Upload className="h-5 w-5" />
                 </div>
                 <h3 className="font-bold">Bulk Onboarding</h3>
@@ -159,7 +159,7 @@ export const Invitations: React.FC = () => {
                                 <div className="flex items-center gap-4">
                                     <div className={cn(
                                         "h-10 w-10 rounded-full flex items-center justify-center",
-                                        invite.status === 'expired' ? "bg-red-50 text-red-500" : "bg-brand-50 text-brand-600"
+                                        invite.status === 'expired' ? "bg-red-50 text-red-500" : "bg-[var(--color-surface-muted)] text-[var(--color-brand-primary)]"
                                     )}>
                                         <Mail className="h-5 w-5" />
                                     </div>
@@ -168,13 +168,13 @@ export const Invitations: React.FC = () => {
                                             <p className="font-bold text-slate-900 text-sm">{invite.email}</p>
                                             <span className={cn(
                                                 "text-[8px] font-black uppercase px-1.5 py-0.5 rounded border",
-                                                invite.status === 'expired' ? "bg-red-50 text-red-600 border-red-100" : "bg-brand-50 text-brand-600 border-brand-100"
+                                                invite.status === 'expired' ? "bg-red-50 text-red-600 border-red-100" : "bg-[var(--color-surface-muted)] text-[var(--color-brand-primary)] border-[var(--color-brand-border)]"
                                             )}>
                                                 {invite.status}
                                             </span>
                                         </div>
                                         <div className="text-[10px] text-slate-500 flex items-center gap-2 mt-0.5">
-                                            <span className="font-bold text-brand-700 capitalize">{invite.role}</span>
+                                            <span className="font-bold text-[var(--color-brand-primary)] capitalize">{invite.role}</span>
                                             {invite.department && <span>• {invite.department}</span>}
                                             <span>• Sent {formatDate(invite.sentAt)}</span>
                                         </div>
@@ -183,7 +183,7 @@ export const Invitations: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                     <button 
                                         onClick={() => handleResend(invite.id)}
-                                        className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition-all"
+                                        className="p-2 text-slate-400 hover:text-[var(--color-brand-primary)] hover:bg-[var(--color-surface-muted)] rounded-md transition-all"
                                         title="Resend Invitation"
                                     >
                                         <RefreshCw className="h-4 w-4" />
@@ -202,11 +202,11 @@ export const Invitations: React.FC = () => {
                 </div>
             </div>
             
-            <div className="mt-6 bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-4">
-                <Shield className="h-6 w-6 text-blue-600 shrink-0" />
+            <div className="mt-6 bg-[var(--color-surface-muted)] border border-[var(--color-brand-border)] rounded-xl p-4 flex gap-4">
+                <Shield className="h-6 w-6 text-[var(--color-brand-primary)] shrink-0" />
                 <div>
-                    <h4 className="text-sm font-bold text-blue-900">Compliance Warning</h4>
-                    <p className="text-xs text-blue-700 leading-relaxed mt-1">
+                    <h4 className="text-sm font-bold text-[var(--color-brand-primary)]">Compliance Warning</h4>
+                    <p className="text-xs text-[var(--color-text-muted)] leading-relaxed mt-1">
                         Invitations expire after 72 hours. To maintain organizational security, ensure staff complete their profile setup immediately upon receipt of the clinical onboarding email.
                     </p>
                 </div>

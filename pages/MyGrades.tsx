@@ -76,7 +76,7 @@ export const MyGrades: React.FC = () => {
   if (isLoading) {
     return (
       <div className="p-8 max-w-5xl mx-auto flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 text-brand-600 animate-spin" />
+        <Loader2 className="h-8 w-8 text-[var(--color-brand-primary)] animate-spin" />
       </div>
     );
   }
@@ -85,8 +85,8 @@ export const MyGrades: React.FC = () => {
     <div className="p-8 max-w-5xl mx-auto">
       <div className="flex justify-between items-start mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2 leading-none">
-            <GraduationCap className="h-8 w-8 text-brand-600" />
+          <h1 className="font-display italic text-2xl text-[var(--color-brand-primary)] flex items-center gap-2 leading-none">
+            <GraduationCap className="h-8 w-8 text-[var(--color-brand-primary)]" />
             Educational Transcript
           </h1>
           <p className="text-slate-500 mt-2">Official record of completed training and continuing education units.</p>
@@ -116,9 +116,9 @@ export const MyGrades: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div className="bg-brand-600 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
+        <div className="bg-[var(--color-brand-primary)] p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
             <Award className="absolute -bottom-4 -right-4 h-24 w-24 opacity-20 rotate-12 text-white" />
-            <p className="text-brand-100 text-xs font-bold uppercase tracking-widest mb-1">Total Credits</p>
+            <p className="text-[var(--color-text-on-dark)] opacity-80 text-xs font-label uppercase tracking-widest mb-1">Total Credits</p>
             <p className="text-3xl font-bold">{completed.reduce((acc, e) => acc + (getCourse(e.courseId)?.ceCredits || 0), 0).toFixed(1)} <span className="text-lg opacity-80">CEU</span></p>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -154,7 +154,7 @@ export const MyGrades: React.FC = () => {
                                 <div className="flex items-center gap-4">
                                     {grade ? (
                                         isExpanded
-                                            ? <ChevronDown className="h-5 w-5 text-brand-500 shrink-0" />
+                                            ? <ChevronDown className="h-5 w-5 text-[var(--color-brand-primary)] shrink-0" />
                                             : <ChevronRight className="h-5 w-5 text-slate-400 shrink-0" />
                                     ) : (
                                         <div className="h-10 w-10 bg-green-50 rounded-lg flex items-center justify-center text-green-600">
@@ -171,7 +171,7 @@ export const MyGrades: React.FC = () => {
                                         <p className="text-xs font-bold text-slate-400 uppercase mb-1">Grade</p>
                                         <p className="text-sm font-bold text-green-600">{grade ? `${grade.overallScore}%` : e.score !== undefined ? `${e.score}%` : 'Pass'}</p>
                                     </div>
-                                    <Button variant="ghost" size="sm" className="text-brand-600">Certificate</Button>
+                                    <Button variant="ghost" size="sm" className="text-[var(--color-brand-primary)]">Certificate</Button>
                                 </div>
                             </div>
                             {isExpanded && grade && (
@@ -219,7 +219,7 @@ export const MyGrades: React.FC = () => {
                                         <span>{e.progress}%</span>
                                     </div>
                                     <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                        <div className="h-full bg-brand-500" style={{ width: `${e.progress}%` }} />
+                                        <div className="h-full bg-[var(--color-brand-primary)]" style={{ width: `${e.progress}%` }} />
                                     </div>
                                 </div>
                                 <Button size="sm" variant="outline">Resume</Button>

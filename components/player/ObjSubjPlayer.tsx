@@ -41,13 +41,13 @@ export const ObjSubjPlayer: React.FC<ObjSubjPlayerProps> = ({
   const allAnswered = items.length > 0 && answeredCount === items.length;
 
   return (
-    <div className="my-8 border border-purple-200 rounded-xl overflow-hidden bg-white shadow-sm">
-      <div className="bg-purple-50 px-6 py-4 border-b border-purple-100 flex justify-between items-center">
-        <h3 className="font-bold text-purple-900 flex items-center gap-2">
-          <Eye className="h-5 w-5 text-purple-600" />
+    <div className="my-8 border border-[var(--color-brand-border)] rounded-xl overflow-hidden bg-white shadow-sm">
+      <div className="bg-[var(--color-surface-muted)] px-6 py-4 border-b border-[var(--color-brand-border)] flex justify-between items-center">
+        <h3 className="font-bold text-[var(--color-brand-dark)] flex items-center gap-2">
+          <Eye className="h-5 w-5 text-[var(--color-brand-primary)]" />
           {data.title || 'Objective vs. Subjective Exercise'}
         </h3>
-        <span className="text-xs font-bold text-purple-600 bg-white px-2 py-1 rounded border border-purple-200">
+        <span className="text-xs font-bold text-[var(--color-brand-primary)] bg-white px-2 py-1 rounded border border-[var(--color-brand-border)]">
           {answeredCount}/{items.length} classified &middot; {data.pointsPerItem}pts each
         </span>
       </div>
@@ -66,7 +66,7 @@ export const ObjSubjPlayer: React.FC<ObjSubjPlayerProps> = ({
                 key={item.id}
                 className={cn(
                   "border rounded-lg p-4 transition-all",
-                  selected ? "border-purple-200 bg-purple-50/30" : "border-slate-200"
+                  selected ? "border-[var(--color-brand-border)] bg-[var(--color-surface-muted)]/50" : "border-slate-200"
                 )}
               >
                 <div className="flex items-start gap-4">
@@ -79,26 +79,26 @@ export const ObjSubjPlayer: React.FC<ObjSubjPlayerProps> = ({
                         className={cn(
                           "flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-2",
                           selected === 'objective'
-                            ? "bg-blue-50 border-blue-400 text-blue-800 ring-1 ring-blue-400"
-                            : "bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-blue-50/50"
+                            ? "bg-[#EDF5F8] border-[var(--color-status-info)] text-[var(--color-status-info)] ring-1 ring-[var(--color-status-info)]"
+                            : "bg-white border-slate-200 text-slate-600 hover:border-[var(--color-status-info)] hover:bg-[#EDF5F8]/50"
                         )}
                       >
                         <Eye className="h-4 w-4" />
                         Objective
-                        {selected === 'objective' && <CheckCircle className="h-3.5 w-3.5 text-blue-600" />}
+                        {selected === 'objective' && <CheckCircle className="h-3.5 w-3.5 text-[var(--color-status-info)]" />}
                       </button>
                       <button
                         onClick={() => handleSelect(item.id, 'subjective')}
                         className={cn(
                           "flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-2",
                           selected === 'subjective'
-                            ? "bg-purple-50 border-purple-400 text-purple-800 ring-1 ring-purple-400"
-                            : "bg-white border-slate-200 text-slate-600 hover:border-purple-300 hover:bg-purple-50/50"
+                            ? "bg-[var(--color-surface-muted)] border-[var(--color-brand-primary)] text-[var(--color-brand-dark)] ring-1 ring-[var(--color-brand-primary)]"
+                            : "bg-white border-slate-200 text-slate-600 hover:border-[var(--color-brand-border)] hover:bg-[var(--color-surface-muted)]/50"
                         )}
                       >
                         <MessageSquare className="h-4 w-4" />
                         Subjective
-                        {selected === 'subjective' && <CheckCircle className="h-3.5 w-3.5 text-purple-600" />}
+                        {selected === 'subjective' && <CheckCircle className="h-3.5 w-3.5 text-[var(--color-brand-primary)]" />}
                       </button>
                     </div>
                   </div>

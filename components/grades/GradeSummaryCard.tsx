@@ -28,14 +28,14 @@ const getCompetencyLevel = (score: number): CompetencyLevel => {
 
 const competencyColors: Record<CompetencyLevel, string> = {
   'Mastery': 'bg-green-100 text-green-700 border-green-200',
-  'Competent': 'bg-blue-100 text-blue-700 border-blue-200',
+  'Competent': 'bg-[var(--color-status-info)] text-white border-transparent',
   'Developing': 'bg-amber-100 text-amber-700 border-amber-200',
   'Not Competent': 'bg-red-100 text-red-700 border-red-200',
 };
 
 const scoreColors: Record<CompetencyLevel, string> = {
   'Mastery': 'text-green-600',
-  'Competent': 'text-blue-600',
+  'Competent': 'text-[var(--color-status-info)]',
   'Developing': 'text-amber-600',
   'Not Competent': 'text-red-600',
 };
@@ -54,7 +54,7 @@ export const GradeSummaryCard: React.FC<GradeSummaryCardProps> = ({
       onClick={onClick}
       className={cn(
         'bg-white rounded-xl border border-slate-200 shadow-sm p-5 transition-all',
-        onClick && 'cursor-pointer hover:shadow-md hover:border-brand-200 group'
+        onClick && 'cursor-pointer hover:shadow-md hover:border-[var(--color-brand-border)] group'
       )}
     >
       <div className="flex items-start gap-4">
@@ -76,7 +76,7 @@ export const GradeSummaryCard: React.FC<GradeSummaryCardProps> = ({
               cy="34"
               r="28"
               fill="none"
-              stroke={courseGrade.overallPassed ? '#16a34a' : courseGrade.completionPercent > 0 ? '#2563eb' : '#94a3b8'}
+              stroke={courseGrade.overallPassed ? '#16a34a' : courseGrade.completionPercent > 0 ? 'var(--color-status-info)' : '#94a3b8'}
               strokeWidth="5"
               strokeLinecap="round"
               strokeDasharray={circumference}
@@ -95,7 +95,7 @@ export const GradeSummaryCard: React.FC<GradeSummaryCardProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h4 className="font-bold text-slate-900 text-sm truncate group-hover:text-brand-600 transition-colors">
+              <h4 className="font-bold text-slate-900 text-sm truncate group-hover:text-[var(--color-brand-primary)] transition-colors">
                 {courseTitle}
               </h4>
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -125,7 +125,7 @@ export const GradeSummaryCard: React.FC<GradeSummaryCardProps> = ({
             </div>
 
             {onClick && (
-              <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-brand-500 transition-colors shrink-0 mt-1" />
+              <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-[var(--color-brand-primary)] transition-colors shrink-0 mt-1" />
             )}
           </div>
 

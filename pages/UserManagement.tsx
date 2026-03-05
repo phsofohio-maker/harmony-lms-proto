@@ -117,7 +117,7 @@ export const UserManagement: React.FC = () => {
                         key={course.id}
                         onClick={() => handleEnroll(course.id, userId)}
                         disabled={isEnrolling}
-                        className="w-full p-3 rounded-lg border border-slate-200 hover:border-brand-500 hover:bg-brand-50 transition-all text-left flex items-center gap-3 disabled:opacity-50"
+                        className="w-full p-3 rounded-lg border border-slate-200 hover:border-[var(--color-brand-primary)] hover:bg-[var(--color-surface-muted)] transition-all text-left flex items-center gap-3 disabled:opacity-50"
                     >
                         <div className="h-8 w-8 rounded bg-slate-100 flex items-center justify-center text-slate-400">
                             <Book className="h-4 w-4" />
@@ -146,7 +146,7 @@ export const UserManagement: React.FC = () => {
       <div className="flex justify-between items-end mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Users className="h-6 w-6 text-brand-600" />
+            <Users className="h-6 w-6 text-[var(--color-brand-primary)]" />
             Staff Compliance Directory
           </h1>
           <p className="text-slate-500 mt-1">Manage user roles and track organizational training requirements.</p>
@@ -175,7 +175,7 @@ export const UserManagement: React.FC = () => {
             <input
               type="text"
               placeholder="Filter by name, email or department..."
-              className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+              className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)] bg-white"
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
             />
@@ -183,14 +183,14 @@ export const UserManagement: React.FC = () => {
         </div>
 
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-[var(--color-brand-dark)] border-b border-[var(--color-brand-border)]">
             <tr>
-              <th className="px-6 py-4 font-semibold text-slate-700">Staff Member</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">Role</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">License</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">Compliance</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">Enrollments</th>
-              <th className="px-6 py-4 font-semibold text-slate-700 text-right">Actions</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Staff Member</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Role</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">License</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Compliance</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Enrollments</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -218,7 +218,7 @@ export const UserManagement: React.FC = () => {
                   <tr key={user.uid} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold">
+                        <div className="h-10 w-10 rounded-full bg-[var(--color-brand-mid)] text-[var(--color-text-on-dark)] flex items-center justify-center font-bold">
                           {user.displayName.charAt(0)}
                         </div>
                         <div>
@@ -236,7 +236,7 @@ export const UserManagement: React.FC = () => {
                     <td className="px-6 py-4">
                       <span className={cn(
                         "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider",
-                        user.role === 'admin' ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                        user.role === 'admin' ? "bg-[var(--color-brand-dark)] text-[var(--color-text-on-dark)]" : "bg-[var(--color-status-info)] text-white"
                       )}>
                         {user.role}
                       </span>

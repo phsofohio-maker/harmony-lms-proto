@@ -536,7 +536,7 @@ export const GradeManagement: React.FC = () => {
           <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
             <div>
               <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                <Shield className="h-5 w-5 text-brand-600" />
+                <Shield className="h-5 w-5 text-[var(--color-brand-primary)]" />
                 Review Submission
               </h2>
               <p className="text-sm text-slate-500 mt-1">
@@ -611,12 +611,12 @@ export const GradeManagement: React.FC = () => {
 
                               {/* Rubric / exemplar — shown for essay questions */}
                               {isEssay && q.correctAnswer && (
-                                <div className="bg-brand-50 p-4 rounded-lg border border-brand-100">
-                                  <p className="text-[10px] font-bold text-brand-600 uppercase mb-2 flex items-center gap-1">
+                                <div className="bg-[var(--color-surface-muted)] p-4 rounded-lg border border-[var(--color-brand-border)]">
+                                  <p className="text-[10px] font-label text-[var(--color-brand-primary)] uppercase tracking-widest mb-2 flex items-center gap-1">
                                     <FileText className="h-3 w-3" />
                                     Instructor Guidelines / Exemplar
                                   </p>
-                                  <p className="text-xs text-brand-900 leading-relaxed">
+                                  <p className="text-xs text-[var(--color-text-primary)] leading-relaxed">
                                     {String(q.correctAnswer)}
                                   </p>
                                 </div>
@@ -681,7 +681,7 @@ export const GradeManagement: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      className="w-full p-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-300 bg-white text-slate-700"
+                      className="w-full p-2 border border-slate-200 rounded-lg text-sm outline-none focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)] bg-white text-slate-700"
                       placeholder="Add notes visible in the audit trail..."
                       value={reviewNotes}
                       onChange={(e) => setReviewNotes(e.target.value)}
@@ -696,7 +696,7 @@ export const GradeManagement: React.FC = () => {
                         type="number"
                         min={0}
                         max={100}
-                        className="w-full p-2 border border-slate-200 rounded-lg text-sm text-center font-bold outline-none focus:ring-2 focus:ring-brand-300 bg-white text-slate-700"
+                        className="w-full p-2 border border-slate-200 rounded-lg text-sm text-center font-bold outline-none focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)] bg-white text-slate-700"
                         placeholder={String(enrollment.score ?? '—')}
                         value={overrideScore ?? ''}
                         onChange={(e) => {
@@ -779,8 +779,8 @@ export const GradeManagement: React.FC = () => {
       {/* Page Header */}
       <div className="flex justify-between items-end mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <ClipboardCheck className="h-6 w-6 text-brand-600" />
+          <h1 className="font-display italic text-2xl text-[var(--color-brand-primary)] flex items-center gap-2">
+            <ClipboardCheck className="h-6 w-6 text-[var(--color-brand-primary)]" />
             Grade Management Center
           </h1>
           <p className="text-slate-500 mt-1">Review clinical assessments and verify staff competencies.</p>
@@ -795,8 +795,8 @@ export const GradeManagement: React.FC = () => {
             className={cn(
               'px-4 py-2 text-sm font-bold rounded-md transition-all flex items-center gap-2',
               viewMode === 'review_queue'
-                ? 'bg-brand-600 text-white'
-                : 'text-slate-500 hover:text-brand-600'
+                ? 'bg-[var(--color-brand-primary)] text-white'
+                : 'text-slate-500 hover:text-[var(--color-brand-primary)]'
             )}
           >
             <ClipboardCheck className="h-4 w-4" />
@@ -807,8 +807,8 @@ export const GradeManagement: React.FC = () => {
             className={cn(
               'px-4 py-2 text-sm font-bold rounded-md transition-all flex items-center gap-2',
               viewMode === 'course_roster'
-                ? 'bg-brand-600 text-white'
-                : 'text-slate-500 hover:text-brand-600'
+                ? 'bg-[var(--color-brand-primary)] text-white'
+                : 'text-slate-500 hover:text-[var(--color-brand-primary)]'
             )}
           >
             <Users className="h-4 w-4" />
@@ -841,8 +841,8 @@ export const GradeManagement: React.FC = () => {
                   className={cn(
                     'px-4 py-1.5 text-xs font-bold rounded-md transition-all',
                     filter === tab.key
-                      ? 'bg-brand-600 text-white'
-                      : 'text-slate-500 hover:text-brand-600'
+                      ? 'bg-[var(--color-brand-primary)] text-white'
+                      : 'text-slate-500 hover:text-[var(--color-brand-primary)]'
                   )}
                 >
                   {tab.label}
@@ -858,7 +858,7 @@ export const GradeManagement: React.FC = () => {
             <select
               value={selectedCourseId || ''}
               onChange={(e) => setSelectedCourseId(e.target.value)}
-              className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 bg-white focus:outline-none focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)]"
             >
               {courses.map(c => (
                 <option key={c.id} value={c.id}>{c.title}</option>
@@ -898,13 +898,13 @@ export const GradeManagement: React.FC = () => {
       {/* Submissions Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-[var(--color-brand-dark)] border-b border-[var(--color-brand-border)]">
             <tr>
-              <th className="px-6 py-4 font-semibold text-slate-700">Staff Member</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">Course</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">Submitted</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">Status</th>
-              <th className="px-6 py-4 font-semibold text-slate-700 text-right">Actions</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Staff Member</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Course</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Submitted</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Status</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">

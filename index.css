@@ -1,22 +1,35 @@
 @import "tailwindcss";
+@import './styles/tokens.css';
 
 @theme {
-  --font-sans: 'Inter', sans-serif;
+  /* --- Brand (green) --- */
+  --color-brand-dark:    #0D1A0F;
+  --color-brand-primary: #1B6B2E;
+  --color-brand-mid:     #2E8B40;
+  --color-brand-accent:  #3DAA52;
+  --color-brand-border:  #2E7D32;
 
-  /* Brand — Clinical Blue */
-  --color-brand-50: #f0f9ff;
-  --color-brand-100: #e0f2fe;
-  --color-brand-500: #0ea5e9;
-  --color-brand-600: #0284c7;
-  --color-brand-700: #0369a1;
-  --color-brand-800: #075985;
-  --color-brand-900: #0c4a6e;
+  /* --- Surface --- */
+  --color-surface-base:   #F5F5F0;
+  --color-surface-raised: #FFFFFF;
+  --color-surface-deep:   #0A1509;
+  --color-surface-muted:  #EEF2EE;
 
-  /* Semantic */
-  --color-success-500: #22c55e;
-  --color-success-600: #16a34a;
-  --color-warning-500: #f59e0b;
-  --color-warning-600: #d97706;
-  --color-critical-500: #ef4444;
-  --color-critical-600: #dc2626;
+  /* --- Text --- */
+  --color-text-primary:  #0D1A0F;
+  --color-text-on-dark:  #F5F5F0;
+  --color-text-muted:    #4A7A55;
+  --color-text-caption:  #6B9E76;
+
+  /* --- Status --- */
+  --color-status-success: #2E8B40;
+  --color-status-warning: #B8860B;
+  --color-status-danger:  #8B1A1A;
+  --color-status-info:    #1A5C7A;
+
+  /* --- Typography --- */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'Source Sans 3', 'Helvetica Neue', sans-serif;
+  --font-label:   'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --font-mono:    'JetBrains Mono', 'Courier New', monospace;
 }

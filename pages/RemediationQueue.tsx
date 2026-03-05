@@ -397,8 +397,8 @@ export const RemediationQueue: React.FC = () => {
                 className={cn(
                   'px-4 py-1.5 text-xs font-bold rounded-md transition-all',
                   filter === tab.key
-                    ? 'bg-brand-600 text-white'
-                    : 'text-slate-500 hover:text-brand-600'
+                    ? 'bg-[var(--color-brand-primary)] text-white'
+                    : 'text-slate-500 hover:text-[var(--color-brand-primary)]'
                 )}
               >
                 {tab.label}
@@ -437,15 +437,15 @@ export const RemediationQueue: React.FC = () => {
       {/* Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-[var(--color-brand-dark)] border-b border-[var(--color-brand-border)]">
             <tr>
-              <th className="px-6 py-4 font-semibold text-slate-700">Staff Member</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">Module</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">Reason</th>
-              <th className="px-6 py-4 font-semibold text-slate-700 text-center">Attempts</th>
-              <th className="px-6 py-4 font-semibold text-slate-700 text-center">Status</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">Requested</th>
-              <th className="px-6 py-4 font-semibold text-slate-700 text-right">Actions</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Staff Member</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Module</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Reason</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest text-center">Attempts</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest text-center">Status</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Requested</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">

@@ -204,7 +204,7 @@ export const CourseManager: React.FC<CourseManagerProps> = ({ onNavigate }) => {
       <div className="flex justify-between items-end mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Layers className="h-6 w-6 text-brand-600" />
+            <Layers className="h-6 w-6 text-[var(--color-brand-primary)]" />
             Curriculum Manager
           </h1>
           <p className="text-slate-500 mt-1">Design courses, configure CE credits, and manage module publishing.</p>
@@ -237,7 +237,7 @@ export const CourseManager: React.FC<CourseManagerProps> = ({ onNavigate }) => {
             <input
               type="text"
               placeholder="Search by title or category..."
-              className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+              className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)] bg-white"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
@@ -245,13 +245,13 @@ export const CourseManager: React.FC<CourseManagerProps> = ({ onNavigate }) => {
         </div>
 
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-[var(--color-brand-dark)] border-b border-[var(--color-brand-border)]">
             <tr>
-              <th className="px-6 py-4 font-semibold text-slate-700">Course Detail</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">Category</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">CE Units</th>
-              <th className="px-6 py-4 font-semibold text-slate-700">Status</th>
-              <th className="px-6 py-4 font-semibold text-slate-700 text-right">Actions</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Course Detail</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Category</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">CE Units</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest">Status</th>
+              <th className="px-6 py-4 font-label text-xs text-[var(--color-text-on-dark)] uppercase tracking-widest text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -289,7 +289,7 @@ export const CourseManager: React.FC<CourseManagerProps> = ({ onNavigate }) => {
                       {(course.category || '').replace('_', ' ')}
                     </span>
                   </td>
-                  <td className="px-6 py-4 font-mono font-bold text-brand-700">
+                  <td className="px-6 py-4 font-mono font-bold text-[var(--color-brand-primary)]">
                     {course.ceCredits.toFixed(1)}
                   </td>
                   <td className="px-6 py-4">

@@ -125,7 +125,7 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
-          <Loader2 className="h-10 w-10 text-brand-600 animate-spin mx-auto" />
+          <Loader2 className="h-10 w-10 text-[var(--color-brand-primary)] animate-spin mx-auto" />
           <p className="mt-4 text-slate-600 font-medium">Loading course...</p>
         </div>
       </div>
@@ -180,7 +180,7 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
             {/* Info */}
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-brand-100 text-brand-700">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[var(--color-surface-muted)] text-[var(--color-brand-primary)]">
                   {course.category}
                 </span>
                 {course.status === 'draft' && (
@@ -202,7 +202,7 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
                   <Clock className="h-4 w-4" />
                   {totalMinutes} min
                 </span>
-                <span className="flex items-center gap-1 text-brand-600 font-medium">
+                <span className="flex items-center gap-1 text-[var(--color-brand-primary)] font-medium">
                   <Award className="h-4 w-4" />
                   {course.ceCredits} CE Credits
                 </span>
@@ -237,7 +237,7 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
                         "bg-white rounded-lg border p-4 flex items-center gap-4 transition-all",
                         status === 'locked' 
                           ? "border-slate-200 opacity-60" 
-                          : "border-slate-200 hover:border-brand-300 hover:shadow-sm cursor-pointer",
+                          : "border-slate-200 hover:border-[var(--color-brand-border)] hover:shadow-sm cursor-pointer",
                         status === 'completed' && "border-green-200 bg-green-50/50"
                       )}
                       onClick={() => status !== 'locked' && handleStartModule(module.id)}
@@ -246,7 +246,7 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
                       <div className={cn(
                         "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
                         status === 'completed' && "bg-green-100 text-green-600",
-                        status === 'in_progress' && "bg-brand-100 text-brand-600",
+                        status === 'in_progress' && "bg-[var(--color-surface-muted)] text-[var(--color-brand-primary)]",
                         status === 'available' && "bg-slate-100 text-slate-600",
                         status === 'locked' && "bg-slate-100 text-slate-400"
                       )}>
@@ -268,7 +268,7 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
                           <span>{module.estimatedMinutes || 0} min</span>
                           <span>Pass: {module.passingScore}%</span>
                           {progress && progress.overallProgress > 0 && (
-                            <span className="text-brand-600 font-medium">
+                            <span className="text-[var(--color-brand-primary)] font-medium">
                               {progress.overallProgress}% complete
                             </span>
                           )}
@@ -326,7 +326,7 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
                     </div>
                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-brand-500 transition-all"
+                        className="h-full bg-[var(--color-brand-primary)] transition-all"
                         style={{ width: `${overallPercent}%` }}
                       />
                     </div>
@@ -401,7 +401,7 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-slate-500">CE Credits</dt>
-                  <dd className="text-slate-900 font-medium text-brand-600">{course.ceCredits}</dd>
+                  <dd className="text-slate-900 font-medium text-[var(--color-brand-primary)]">{course.ceCredits}</dd>
                 </div>
               </dl>
             </div>

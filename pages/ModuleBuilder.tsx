@@ -67,7 +67,7 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
-          <Loader2 className="h-10 w-10 text-brand-600 animate-spin mx-auto" />
+          <Loader2 className="h-10 w-10 text-[var(--color-brand-primary)] animate-spin mx-auto" />
           <p className="mt-4 text-slate-600 font-medium">Loading module...</p>
         </div>
       </div>
@@ -177,7 +177,7 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
                 type="text"
                 value={module.title}
                 onChange={(e) => updateModuleMetadata({ title: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-slate-900 bg-white"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)] outline-none text-slate-900 bg-white"
                 placeholder="Module title"
               />
             </div>
@@ -193,7 +193,7 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
                     onChange={(e) =>
                       updateModuleMetadata({ passingScore: parseInt(e.target.value) || 0 })
                     }
-                    className="w-20 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-slate-900 bg-white"
+                    className="w-20 px-3 py-2 border border-slate-300 rounded-lg focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)] outline-none text-slate-900 bg-white"
                     min="0"
                     max="100"
                   />
@@ -211,7 +211,7 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
                     onChange={(e) =>
                       updateModuleMetadata({ estimatedMinutes: parseInt(e.target.value) || 0 })
                     }
-                    className="w-20 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-slate-900 bg-white"
+                    className="w-20 px-3 py-2 border border-slate-300 rounded-lg focus:shadow-[var(--shadow-glow)] focus:border-[var(--color-brand-mid)] outline-none text-slate-900 bg-white"
                     min="0"
                   />
                   <span className="ml-2 text-slate-500">min</span>
@@ -279,9 +279,9 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
             </button>
             <button
               onClick={() => addBlock('obj_subj_validator')}
-              className="px-4 py-2 rounded-full hover:bg-purple-50 text-sm font-medium text-purple-700 flex items-center gap-2 transition-colors whitespace-nowrap"
+              className="px-4 py-2 rounded-full hover:bg-[var(--color-surface-muted)] text-sm font-medium text-[var(--color-brand-primary)] flex items-center gap-2 transition-colors whitespace-nowrap"
             >
-              <Plus className="h-3 w-3 text-purple-400" />
+              <Plus className="h-3 w-3 text-[var(--color-brand-primary)]" />
               Obj/Subj Exercise
             </button>
           </div>

@@ -45,7 +45,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate }) => {
       {/* Header */}
       <div className="mb-8 flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">
+          <h1 className="font-display italic text-3xl text-[var(--color-brand-primary)]">
             Welcome back, {user.displayName}
           </h1>
           <p className="text-slate-500 mt-2">
@@ -63,7 +63,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate }) => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+          <div className="h-12 w-12 rounded-full bg-[var(--color-surface-muted)] flex items-center justify-center text-[var(--color-brand-primary)]">
             <Clock className="h-6 w-6" />
           </div>
           <div>
@@ -97,7 +97,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate }) => {
       {courseGrades.length > 0 && (
         <div className="mb-10">
           <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <GraduationCap className="h-4 w-4 text-brand-500" />
+            <GraduationCap className="h-4 w-4 text-[var(--color-brand-primary)]" />
             Your Course Grades
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -201,7 +201,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate }) => {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-500 to-brand-700">
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-dark)]">
                       <BookOpen className="h-8 w-8 text-white/50" />
                     </div>
                   )}
@@ -220,7 +220,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate }) => {
 
                 {/* Content */}
                 <div className="p-4">
-                  <h3 className="font-bold text-slate-900 mb-1 line-clamp-1 group-hover:text-brand-600 transition-colors">
+                  <h3 className="font-bold text-slate-900 mb-1 line-clamp-1 group-hover:text-[var(--color-brand-primary)] transition-colors">
                     {course.title}
                   </h3>
                   <p className="text-sm text-slate-500 mb-4 line-clamp-2 min-h-[40px]">

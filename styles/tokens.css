@@ -1,0 +1,46 @@
+/* === HARMONY HEALTH DESIGN SYSTEM === */
+/* Token source: HHCA_LMS_Logo — extracted March 2026 */
+
+:root {
+  /* --- Core Brand Palette --- */
+  --color-brand-dark:      #0D1A0F;  /* Near-black forest — dark badge bg */
+  --color-brand-primary:   #1B6B2E;  /* Deep clinical emerald — main brand */
+  --color-brand-mid:       #2E8B40;  /* Mid emerald — icon, nurse cap, cross */
+  --color-brand-accent:    #3DAA52;  /* Lighter emerald — hover states, glows */
+  --color-brand-border:    #2E7D32;  /* Frame/border green */
+
+  /* --- Surface & Background --- */
+  --color-surface-base:    #F5F5F0;  /* Warm off-white — light badge fill */
+  --color-surface-raised:  #FFFFFF;  /* Pure white — cards */
+  --color-surface-deep:    #0A1509;  /* Darkest — sidebar, nav dark mode */
+  --color-surface-muted:   #EEF2EE;  /* Tinted green-white — table rows, wells */
+
+  /* --- Text --- */
+  --color-text-primary:    #0D1A0F;  /* Near-black on light bg */
+  --color-text-on-dark:    #F5F5F0;  /* Warm off-white on dark bg */
+  --color-text-muted:      #4A7A55;  /* Muted mid-green for secondary text */
+  --color-text-caption:    #6B9E76;  /* Spaced-caps labels, metadata */
+
+  /* --- Status / Semantic (derived from brand) --- */
+  --color-status-success:  #2E8B40;  /* Pass / complete — brand mid */
+  --color-status-warning:  #B8860B;  /* Neutral warning — dark goldenrod */
+  --color-status-danger:   #8B1A1A;  /* Fail / expired — deep clinical red */
+  --color-status-info:     #1A5C7A;  /* Informational — clinical teal */
+
+  /* --- Typography --- */
+  --font-display:   'Playfair Display', Georgia, serif;  /* "Harmony" italic serif */
+  --font-body:      'Source Sans 3', 'Helvetica Neue', sans-serif;
+  --font-label:     'Barlow Condensed', 'Arial Narrow', sans-serif; /* CLINICAL EDUCATION MASTERY spaced-caps */
+  --font-mono:      'JetBrains Mono', 'Courier New', monospace;
+
+  /* --- Spacing --- */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-pill: 9999px;
+
+  /* --- Elevation / Shadow --- */
+  --shadow-card:   0 2px 8px rgba(13, 26, 15, 0.12);
+  --shadow-modal:  0 8px 32px rgba(13, 26, 15, 0.24);
+  --shadow-glow:   0 0 0 3px rgba(46, 139, 64, 0.25);  /* Focus ring */
+}
