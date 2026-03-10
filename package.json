@@ -17,7 +17,8 @@
     "seed:course": "npx tsx --tsconfig scripts/seed/tsconfig.json scripts/seed/seedCourse.ts",
     "unseed": "npx tsx --tsconfig scripts/seed/tsconfig.json scripts/seed/unseed.ts",
     "unseed:full": "npx tsx --tsconfig scripts/seed/tsconfig.json scripts/seed/unseed.ts --full",
-    "reseed": "npm run unseed:full && npm run seed"
+    "reseed": "npm run unseed:full && npm run seed",
+    "cleanup:deploy": "npx tsx --tsconfig scripts/seed/tsconfig.json scripts/seed/deploymentCleanup.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",
