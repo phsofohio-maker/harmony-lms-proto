@@ -343,8 +343,12 @@ id: string;
 email: string;
 role: UserRoleType;
 department?: string;
+token: string;
 sentAt: string;
-status: "pending" | "expired" | "accepted";
+expiresAt: string;
+status: "pending" | "expired" | "accepted" | "cancelled";
+invitedBy: string;
+invitedByName: string;
 }
 
 // ============================================

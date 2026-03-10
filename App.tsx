@@ -31,6 +31,7 @@ import { CourseManager } from './pages/CourseManager';
 import { MyGrades } from './pages/MyGrades';
 import { GradeManagement } from './pages/GradeManagement';
 import { Invitations } from './pages/Invitations';
+import { AcceptInvite } from './pages/AcceptInvite';
 import { RemediationQueue } from './pages/RemediationQueue';
 import { CohortManagement } from './pages/CohortManagement';
 import { Button } from './components/ui/Button';
@@ -57,6 +58,24 @@ const AppContent: React.FC = () => {
   }>({});
 
   if (isLoading) return <LoadingScreen />;
+
+  // Accept Invitation route — accessible WITHOUT authentication.
+  // Check URL params for the accept-invite flow before showing login.
+  const urlParams = new URLSearchParams(window.location.search);
+  const inviteToken = urlParams.get('token');
+  if (window.location.pathname === '/accept-invite' && inviteToken) {
+    return (
+      <AcceptInvite
+        token={inviteToken}
+        onComplete={() => {
+          // Clear URL params and go to login
+          window.history.replaceState({}, '', '/');
+          window.location.reload();
+        }}
+      />
+    );
+  }
+
   if (!isAuthenticated || !user) return <Login />;
 
   // Navigation handler

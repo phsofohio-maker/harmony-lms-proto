@@ -9,7 +9,7 @@ rules_version = '2';
  * - Audit Trail: Immutable logs, no deletions
  * - Role-Based Access: Admin > Instructor > Staff hierarchy
  * 
- * Last Updated: Phase 2 - Verification Panel Fixes
+ * Last Updated: Deployment Sprint Phase 1 - Firestore Blockers
  * 
  * Changes from Phase 1.5:
  * - progress/create: Removed hasRequiredFields enforcement (moved to service layer).
@@ -80,7 +80,9 @@ service cloud.firestore {
     // ============================================
     
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
+      // Instructors need read access to resolve learner names in
+      // Grade Management review queue and Course Roster views.
+      allow read: if isOwner(userId) || canAuthorContent();
       allow create: if isOwner(userId) || isAdmin();
       allow update: if isAdmin() || (
         isOwner(userId) && 
@@ -286,6 +288,29 @@ service cloud.firestore {
       allow read: if hasAnyRole(['admin', 'instructor']);
       allow create, update: if isAdmin();
       allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // INVITATIONS (Staff Onboarding)
+    // ============================================
+
+    match /invitations/{invitationId} {
+      // Admins can read all invitations; unauthenticated token lookups
+      // are handled server-side via Cloud Functions.
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // ============================================
+    // MAIL (Firebase Extension - Trigger Email)
+    // ============================================
+
+    match /mail/{mailId} {
+      allow create: if isAdmin();
+      allow read: if isAdmin();
+      allow update, delete: if false;
     }
 
     // ============================================
