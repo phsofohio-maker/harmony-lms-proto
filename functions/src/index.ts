@@ -491,6 +491,188 @@ export const calculateCourseGrade = onCall(async (request) => {
 });
 
 // ============================================
+// FUNCTION: Create Invited User (Accept Invitation)
+// ============================================
+
+/**
+ * Callable function that handles the accept-invitation flow.
+ * This MUST run server-side because:
+ * 1. Client-side createUserWithEmailAndPassword cannot set custom claims
+ * 2. Token validation must be tamper-proof
+ * 3. The invitation status update must be atomic with account creation
+ *
+ * Called from the AcceptInvite page after the user fills in their details.
+ */
+export const createInvitedUser = onCall(async (request) => {
+  const { token, displayName, password } = request.data;
+
+  // Validate inputs
+  if (!token || typeof token !== "string") {
+    throw new HttpsError("invalid-argument", "Invitation token is required.");
+  }
+  if (!displayName || typeof displayName !== "string" || displayName.trim().length < 2) {
+    throw new HttpsError("invalid-argument", "Full name is required (minimum 2 characters).");
+  }
+  if (!password || typeof password !== "string" || password.length < 8) {
+    throw new HttpsError("invalid-argument", "Password must be at least 8 characters.");
+  }
+
+  try {
+    // 1. Look up the invitation by token
+    const invitationsSnap = await db
+      .collection("invitations")
+      .where("token", "==", token)
+      .limit(1)
+      .get();
+
+    if (invitationsSnap.empty) {
+      throw new HttpsError("not-found", "Invalid or expired invitation link.");
+    }
+
+    const invitationDoc = invitationsSnap.docs[0];
+    const invitation = invitationDoc.data();
+
+    // 2. Validate invitation status
+    if (invitation.status !== "pending") {
+      throw new HttpsError(
+        "failed-precondition",
+        invitation.status === "accepted"
+          ? "This invitation has already been used."
+          : `This invitation is ${invitation.status}.`
+      );
+    }
+
+    // 3. Check expiration
+    const expiresAt = invitation.expiresAt?.toDate?.();
+    if (expiresAt && expiresAt < new Date()) {
+      // Mark as expired
+      await invitationDoc.ref.update({ status: "expired" });
+      throw new HttpsError("deadline-exceeded", "This invitation has expired. Please ask your administrator to send a new one.");
+    }
+
+    // 4. Create Firebase Auth account
+    const userRecord = await admin.auth().createUser({
+      email: invitation.email,
+      password,
+      displayName: displayName.trim(),
+    });
+
+    // 5. Set JWT custom claims with the role from the invitation
+    await admin.auth().setCustomUserClaims(userRecord.uid, {
+      role: invitation.role,
+    });
+
+    // 6. Create Firestore user profile
+    await db.collection("users").doc(userRecord.uid).set({
+      uid: userRecord.uid,
+      displayName: displayName.trim(),
+      email: invitation.email,
+      role: invitation.role,
+      department: invitation.department || null,
+      createdAt: admin.firestore.Timestamp.now(),
+      createdVia: "invitation",
+      invitationId: invitationDoc.id,
+    });
+
+    // 7. Mark invitation as accepted
+    await invitationDoc.ref.update({
+      status: "accepted",
+      acceptedAt: admin.firestore.Timestamp.now(),
+      acceptedBy: userRecord.uid,
+    });
+
+    // 8. Create audit log entry
+    await createAuditLog(
+      userRecord.uid,
+      displayName.trim(),
+      "USER_LOGIN",
+      userRecord.uid,
+      `Account created via invitation. Role: ${invitation.role}. Email: ${invitation.email}.`,
+      {
+        invitationId: invitationDoc.id,
+        role: invitation.role,
+        department: invitation.department,
+        invitedBy: invitation.invitedBy,
+      }
+    );
+
+    logger.info("Invited user account created", {
+      uid: userRecord.uid,
+      email: invitation.email,
+      role: invitation.role,
+    });
+
+    return {
+      success: true,
+      uid: userRecord.uid,
+      email: invitation.email,
+      role: invitation.role,
+    };
+  } catch (error: any) {
+    // Re-throw HttpsErrors as-is
+    if (error.code && error.code.startsWith("functions/")) {
+      throw error;
+    }
+    // Firebase Auth errors
+    if (error.code === "auth/email-already-exists") {
+      throw new HttpsError(
+        "already-exists",
+        "An account with this email already exists. Please log in instead."
+      );
+    }
+    logger.error("Failed to create invited user:", error);
+    throw new HttpsError("internal", "Failed to create account. Please try again.");
+  }
+});
+
+// ============================================
+// FUNCTION: Validate Invitation Token (Public)
+// ============================================
+
+/**
+ * Callable function to validate an invitation token without auth.
+ * Returns the invitation email and status so the AcceptInvite page
+ * can pre-fill the email field and show appropriate messages.
+ */
+export const validateInvitationToken = onCall(async (request) => {
+  const { token } = request.data;
+
+  if (!token || typeof token !== "string") {
+    throw new HttpsError("invalid-argument", "Token is required.");
+  }
+
+  const invitationsSnap = await db
+    .collection("invitations")
+    .where("token", "==", token)
+    .limit(1)
+    .get();
+
+  if (invitationsSnap.empty) {
+    throw new HttpsError("not-found", "Invalid invitation link.");
+  }
+
+  const invitation = invitationsSnap.docs[0].data();
+
+  // Check expiration
+  const expiresAt = invitation.expiresAt?.toDate?.();
+  if (invitation.status === "pending" && expiresAt && expiresAt < new Date()) {
+    await invitationsSnap.docs[0].ref.update({ status: "expired" });
+    return { valid: false, reason: "expired" };
+  }
+
+  if (invitation.status !== "pending") {
+    return { valid: false, reason: invitation.status };
+  }
+
+  return {
+    valid: true,
+    email: invitation.email,
+    role: invitation.role,
+    department: invitation.department,
+  };
+});
+
+// ============================================
 // FUNCTION: Set User Role (Custom Claims)
 // ============================================
 

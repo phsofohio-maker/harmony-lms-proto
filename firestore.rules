@@ -291,6 +291,29 @@ service cloud.firestore {
     }
 
     // ============================================
+    // INVITATIONS (Staff Onboarding)
+    // ============================================
+
+    match /invitations/{invitationId} {
+      // Admins can read all invitations; unauthenticated token lookups
+      // are handled server-side via Cloud Functions.
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // ============================================
+    // MAIL (Firebase Extension - Trigger Email)
+    // ============================================
+
+    match /mail/{mailId} {
+      allow create: if isAdmin();
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // ============================================
     // CATCH-ALL: Deny everything else
     // ============================================
 
