@@ -101,7 +101,7 @@
         { "fieldPath": "courseId", "order": "ASCENDING" },
         { "fieldPath": "overallScore", "order": "DESCENDING" }
       ]
-    }
+    },
     {
       "collectionGroup": "invitations",
       "queryScope": "COLLECTION",

@@ -536,9 +536,9 @@ export const createInvitedUser = onCall(async (request) => {
     if (invitation.status !== "pending") {
       throw new HttpsError(
         "failed-precondition",
-        invitation.status === "accepted"
-          ? "This invitation has already been used."
-          : `This invitation is ${invitation.status}.`
+        invitation.status === "accepted" ?
+          "This invitation has already been used." :
+          `This invitation is ${invitation.status}.`
       );
     }
 
@@ -547,7 +547,10 @@ export const createInvitedUser = onCall(async (request) => {
     if (expiresAt && expiresAt < new Date()) {
       // Mark as expired
       await invitationDoc.ref.update({ status: "expired" });
-      throw new HttpsError("deadline-exceeded", "This invitation has expired. Please ask your administrator to send a new one.");
+      throw new HttpsError(
+        "deadline-exceeded",
+        "This invitation has expired. Please ask your administrator to send a new one."
+      );
     }
 
     // 4. Create Firebase Auth account
