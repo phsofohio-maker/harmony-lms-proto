@@ -30,8 +30,8 @@ import {
   ObjSubjItem,
 } from '../../functions/src/types';
 import {
-  Trash2, GripVertical, CheckSquare, Image as ImageIcon,
-  Type, Video, Hash, Bold, Italic, List, Link as LinkIcon,
+  Trash2, ChevronUp, ChevronDown, CheckSquare, Image as ImageIcon,
+  Type, Video, Hash,
   AlertTriangle, Info, AlertOctagon, FileText, Plus, Minus,
   Loader2, Upload,
 } from 'lucide-react';
@@ -70,27 +70,19 @@ interface BlockEditorProps {
   block: ContentBlock;
   onChange: (id: string, data: any) => void;
   onDelete: (id: string) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
-export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDelete }) => {
+export const BlockEditor: React.FC<BlockEditorProps> = ({
+  block, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast
+}) => {
 
   const handleChange = (field: string, value: any) => {
     onChange(block.id, { ...block.data, [field]: value });
   };
-
-  // ============================================
-  // RICH TEXT TOOLBAR (unchanged)
-  // ============================================
-
-  const renderRichTextToolbar = () => (
-    <div className="flex items-center gap-1 p-2 border-b border-gray-200 bg-gray-50 rounded-t-md">
-      <button className="p-1.5 hover:bg-gray-200 rounded text-gray-600" title="Bold"><Bold className="h-4 w-4" /></button>
-      <button className="p-1.5 hover:bg-gray-200 rounded text-gray-600" title="Italic"><Italic className="h-4 w-4" /></button>
-      <div className="w-px h-4 bg-gray-300 mx-1"></div>
-      <button className="p-1.5 hover:bg-gray-200 rounded text-gray-600" title="List"><List className="h-4 w-4" /></button>
-      <button className="p-1.5 hover:bg-gray-200 rounded text-gray-600" title="Link"><LinkIcon className="h-4 w-4" /></button>
-    </div>
-  );
 
   // ============================================
   // NEW: Per-Question Editor with Type Switching
@@ -456,9 +448,8 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
               currentVariant === 'callout-critical' && 'border-l-4 border-l-red-500 border-gray-200',
               currentVariant === 'paragraph' && 'border-gray-300 focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500'
             )}>
-              {renderRichTextToolbar()}
               <textarea
-                className="w-full p-4 min-h-[120px] outline-none resize-y rounded-b-md text-gray-700 text-sm leading-relaxed bg-white"
+                className="w-full p-4 min-h-[120px] outline-none resize-y rounded-md text-gray-700 text-sm leading-relaxed bg-white"
                 value={textData.content || ''}
                 onChange={(e) => handleChange('content', e.target.value)}
                 placeholder="Start typing your content here..."
@@ -477,7 +468,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
           <div className="space-y-4">
             {vidData.url && (
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                <iframe src={vidData.url} className="w-full h-full" allowFullScreen />
+                <iframe src={normalizeYouTubeUrl(vidData.url)} className="w-full h-full" allowFullScreen />
               </div>
             )}
             <div className="grid grid-cols-12 gap-4">
@@ -764,8 +755,33 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange, onDel
     <div className="group border border-gray-200 rounded-lg bg-white shadow-sm transition-all hover:border-primary-300 hover:shadow-md">
       <div className="flex items-center justify-between p-2 pl-4 bg-white border-b border-gray-100 rounded-t-lg">
         <div className="flex items-center gap-3">
-          <div className="cursor-move p-1 hover:bg-gray-100 rounded text-gray-300 hover:text-gray-500">
-            <GripVertical className="h-4 w-4" />
+          <div className="flex flex-col gap-0.5">
+            <button
+              onClick={onMoveUp}
+              disabled={isFirst}
+              className={cn(
+                "p-0.5 rounded transition-colors",
+                isFirst
+                  ? "text-gray-200 cursor-not-allowed"
+                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              )}
+              title="Move up"
+            >
+              <ChevronUp className="h-3 w-3" />
+            </button>
+            <button
+              onClick={onMoveDown}
+              disabled={isLast}
+              className={cn(
+                "p-0.5 rounded transition-colors",
+                isLast
+                  ? "text-gray-200 cursor-not-allowed"
+                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              )}
+              title="Move down"
+            >
+              <ChevronDown className="h-3 w-3" />
+            </button>
           </div>
           <span className="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-2">
             <Icon className="h-3 w-3" />

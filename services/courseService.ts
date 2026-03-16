@@ -297,7 +297,31 @@ import {
   // ============================================
   // CONTENT BLOCK OPERATIONS
   // ============================================
-  
+
+  /**
+   * Recursively strips undefined values from an object before Firestore writes.
+   * Firestore rejects undefined but treats missing fields identically to deleted ones,
+   * so this is semantically safe.
+   */
+  function stripUndefined<T extends Record<string, any>>(obj: T): T {
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([_, v]) => v !== undefined)
+        .map(([k, v]) => [
+          k,
+          v && typeof v === 'object' && !Array.isArray(v)
+            ? stripUndefined(v)
+            : Array.isArray(v)
+              ? v.map(item =>
+                  item && typeof item === 'object' && !Array.isArray(item)
+                    ? stripUndefined(item)
+                    : item
+                )
+              : v,
+        ])
+    ) as T;
+  }
+
   /**
    * Saves all blocks for a module (batch operation)
    * This replaces all existing blocks with the provided array
@@ -332,12 +356,12 @@ import {
     // Add all new blocks
     blocks.forEach((block, index) => {
       const blockRef = doc(blocksRef, block.id);
-      batch.set(blockRef, {
+      batch.set(blockRef, stripUndefined({
         ...block,
         moduleId,
         order: index,
         updatedAt: serverTimestamp(),
-      });
+      }));
     });
     
     // Update module's updatedAt
@@ -376,12 +400,12 @@ import {
     
     const blockRef = doc(blocksRef, block.id);
     
-    await setDoc(blockRef, {
+    await setDoc(blockRef, stripUndefined({
       ...block,
       moduleId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    }));
     
     await auditService.logToFirestore(
       actorId,

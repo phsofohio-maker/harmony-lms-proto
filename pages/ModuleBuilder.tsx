@@ -26,14 +26,14 @@ import {
 import { cn } from '../utils';
 
 interface ModuleBuilderProps {
-  courseId?: string;
+  courseId: string;
   moduleId?: string;
   userUid: string;
   onBack: () => void;
 }
 
 export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
-  courseId = 'default-course', // Fallback for demo
+  courseId,
   moduleId,
   userUid,
   onBack,
@@ -47,11 +47,23 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
     addBlock,
     updateBlock,
     deleteBlock,
+    reorderBlocks,
     updateModuleMetadata,
     save,
   } = useModule({ courseId, moduleId });
 
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+
+  // Guard against losing unsaved changes on back navigation
+  const handleBack = () => {
+    if (isDirty) {
+      const confirmed = window.confirm(
+        'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.'
+      );
+      if (!confirmed) return;
+    }
+    onBack();
+  };
 
   // Handle save with success feedback
   const handleSave = async () => {
@@ -101,7 +113,7 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={onBack}
+                onClick={handleBack}
                 className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors"
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -181,6 +193,18 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
                 placeholder="Module title"
               />
             </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                value={module.description || ''}
+                onChange={(e) => updateModuleMetadata({ description: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-gray-900 bg-white text-sm resize-y"
+                placeholder="Brief description of what this module covers..."
+                rows={2}
+              />
+            </div>
             <div className="flex gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -230,12 +254,16 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
               <p className="text-sm text-gray-400">Add a block below to get started</p>
             </div>
           ) : (
-            module.blocks.map((block) => (
+            module.blocks.map((block, index) => (
               <BlockEditor
                 key={block.id}
                 block={block}
                 onChange={updateBlock}
                 onDelete={deleteBlock}
+                onMoveUp={() => reorderBlocks(index, index - 1)}
+                onMoveDown={() => reorderBlocks(index, index + 1)}
+                isFirst={index === 0}
+                isLast={index === module.blocks.length - 1}
               />
             ))
           )}

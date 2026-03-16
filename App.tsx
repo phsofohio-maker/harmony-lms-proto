@@ -174,6 +174,35 @@ const AppContent: React.FC = () => {
     );
   }
 
+  // Module Builder (full-screen, between CourseEditor and block editing)
+  if (currentPath === '/builder') {
+    if (!routeContext.courseId) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <AlertCircle className="h-10 w-10 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 mb-4">No course selected.</p>
+            <Button onClick={() => setCurrentPath('/curriculum')}>
+              Go to Curriculum Manager
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <ModuleBuilder
+        courseId={routeContext.courseId}
+        moduleId={routeContext.moduleId}
+        userUid={user.uid}
+        onBack={() => {
+          setCurrentPath('/course-editor');
+          setRouteContext(prev => ({ ...prev, courseId: routeContext.courseId }));
+        }}
+      />
+    );
+  }
+
   // ============================================
   // SIDEBAR ROUTES
   // ============================================
@@ -213,16 +242,6 @@ const AppContent: React.FC = () => {
 
       case '/audit':
         return <AuditLogs />;
-
-      case '/builder':
-        return (
-          <ModuleBuilder
-            courseId={routeContext.courseId}
-            moduleId={routeContext.moduleId}
-            userUid={user.uid}
-            onBack={() => setCurrentPath('/course-editor')}
-          />
-        );
 
       default:
         return <Dashboard user={user} onNavigate={handleNavigate} />;
