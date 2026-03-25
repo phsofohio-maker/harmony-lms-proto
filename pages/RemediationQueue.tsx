@@ -30,6 +30,7 @@ import {
 import { Button } from '../components/ui/Button';
 import { cn, formatDate } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/useToast';
 import { resetEnrollment } from '../services/enrollmentService';
 import { auditService } from '../services/auditService';
 import {
@@ -78,6 +79,7 @@ type FilterStatus = 'pending' | 'approved' | 'denied' | 'all';
 
 export const RemediationQueue: React.FC = () => {
   const { user, hasRole } = useAuth();
+  const { addToast } = useToast();
 
   const [requests, setRequests] = useState<EnrichedRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -253,11 +255,12 @@ export const RemediationQueue: React.FC = () => {
         `Enrollment reset, learner may retry. (${request.attemptCount} previous attempts)`
       );
 
+      addToast({ type: 'success', title: 'Remediation approved', message: `${request.userName} may now retry the module.` });
       await fetchRequests();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to unlock';
+      addToast({ type: 'error', title: 'Failed to approve', message: msg });
       console.error('Unlock error:', err);
-      alert(`Error: ${msg}`);
     } finally {
       setIsProcessing(null);
     }
@@ -290,11 +293,12 @@ export const RemediationQueue: React.FC = () => {
 
       setDenyingRequestId(null);
       setDenyReason('');
+      addToast({ type: 'warning', title: 'Remediation denied', message: `Request for ${request.userName} was denied.` });
       await fetchRequests();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to deny request';
+      addToast({ type: 'error', title: 'Failed to deny', message: msg });
       console.error('Deny error:', err);
-      alert(`Error: ${msg}`);
     } finally {
       setIsProcessing(null);
     }

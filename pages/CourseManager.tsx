@@ -12,6 +12,7 @@ import { Settings, FileEdit, Trash2, Plus, Search, Layers, AlertCircle, Globe, L
 import { Button } from '../components/ui/Button';
 import { cn, generateId } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/useToast';
 import { useCourses } from '../hooks/useCourses';
 import { createCourse, updateCourse, getModules, createModule, updateModule } from '../services/courseService';
 import { collection, doc, deleteDoc, getDocs, writeBatch } from 'firebase/firestore';
@@ -33,6 +34,7 @@ interface CourseManagerProps {
 
 export const CourseManager: React.FC<CourseManagerProps> = ({ onNavigate }) => {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const { courses, isLoading, error, refetch } = useCourses();
   const [filter, setFilter] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -121,8 +123,11 @@ export const CourseManager: React.FC<CourseManagerProps> = ({ onNavigate }) => {
       );
       setShowCreateModal(false);
       setNewCourse({ title: '', description: '', category: 'clinical_skills', ceCredits: 1.0, thumbnailUrl: '' });
+      addToast({ type: 'success', title: 'Course created', message: newCourse.title.trim() });
       onNavigate('/course-editor', { courseId });
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      addToast({ type: 'error', title: 'Failed to create course', message: msg });
       console.error('Failed to create course:', err);
     } finally {
       setIsCreating(false);
@@ -162,8 +167,11 @@ export const CourseManager: React.FC<CourseManagerProps> = ({ onNavigate }) => {
       );
 
       setConfirmDeleteId(null);
+      addToast({ type: 'success', title: 'Course deleted' });
       await refetch();
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      addToast({ type: 'error', title: 'Failed to delete course', message: msg });
       console.error('Failed to delete course:', err);
     } finally {
       setIsDeleting(false);
@@ -192,8 +200,12 @@ export const CourseManager: React.FC<CourseManagerProps> = ({ onNavigate }) => {
         );
       }
 
+      const course = courses.find(c => c.id === courseId);
+      addToast({ type: 'success', title: `${course?.title || 'Course'} ${newStatus === 'published' ? 'published' : 'unpublished'}` });
       await refetch();
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      addToast({ type: 'error', title: 'Failed to update status', message: msg });
       console.error('Failed to toggle publish:', err);
     }
   };

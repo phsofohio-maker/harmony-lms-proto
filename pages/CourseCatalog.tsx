@@ -71,7 +71,7 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ onNavigate }) => {
           {courses.map(course => (
             <div 
               key={course.id} 
-              className="group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-sm transition-all flex flex-col h-full cursor-pointer"
+              className="group bg-white rounded-lg border border-gray-200 overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:shadow-sm active:translate-y-0 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none flex flex-col h-full"
               onClick={() => handleViewCourse(course.id)}
             >
               {/* Thumbnail */}

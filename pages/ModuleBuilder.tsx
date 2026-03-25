@@ -24,6 +24,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { cn } from '../utils';
+import { useToast } from '../hooks/useToast';
 
 interface ModuleBuilderProps {
   courseId: string;
@@ -52,7 +53,7 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
     save,
   } = useModule({ courseId, moduleId });
 
-  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const { addToast } = useToast();
 
   // Guard against losing unsaved changes on back navigation
   const handleBack = () => {
@@ -67,10 +68,14 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
 
   // Handle save with success feedback
   const handleSave = async () => {
-    const success = await save();
-    if (success) {
-      setShowSaveSuccess(true);
-      setTimeout(() => setShowSaveSuccess(false), 3000);
+    try {
+      const success = await save();
+      if (success) {
+        addToast({ type: 'success', title: 'Module saved' });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      addToast({ type: 'error', title: 'Failed to save module', message: msg });
     }
   };
 
@@ -143,14 +148,6 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
                 <div className="flex items-center gap-2 text-red-600 text-sm">
                   <AlertCircle className="h-4 w-4" />
                   <span>{error}</span>
-                </div>
-              )}
-
-              {/* Success indicator */}
-              {showSaveSuccess && (
-                <div className="flex items-center gap-2 text-green-600 text-sm">
-                  <Check className="h-4 w-4" />
-                  <span>Saved successfully</span>
                 </div>
               )}
 

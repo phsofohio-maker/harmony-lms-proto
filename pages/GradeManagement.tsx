@@ -22,7 +22,7 @@
  * 
  * @module pages/GradeManagement
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Enrollment,
   QuizBlockData,
@@ -51,6 +51,7 @@ import { Button } from '../components/ui/Button';
 import { CourseRoster } from '../components/grades/CourseRoster';
 import { cn, formatDate } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/useToast';
 
 // ---- Firestore Services ----
 import {
@@ -96,6 +97,7 @@ type ViewMode = 'review_queue' | 'course_roster';
 
 export const GradeManagement: React.FC = () => {
   const { user, hasRole } = useAuth();
+  const { addToast } = useToast();
 
   // ---- State ----
   const [submissions, setSubmissions] = useState<ReviewableSubmission[]>([]);
@@ -116,6 +118,16 @@ export const GradeManagement: React.FC = () => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
+
+  // Escape key to close review modal
+  useEffect(() => {
+    if (!reviewingSubmission) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setReviewingSubmission(null);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [reviewingSubmission]);
 
   // ============================================
   // DATA FETCHING
@@ -360,12 +372,13 @@ export const GradeManagement: React.FC = () => {
 
       // 5. Close modal and refresh
       setReviewingSubmission(null);
+      addToast({ type: 'success', title: 'Grade approved', message: `Submission approved with score ${finalScore}%` });
       await fetchSubmissions();
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to approve submission';
+      addToast({ type: 'error', title: 'Failed to approve grade', message: msg });
       console.error('Approve error:', err);
-      alert(`Error: ${msg}`);
     } finally {
       setIsSubmittingReview(false);
     }
@@ -403,12 +416,13 @@ export const GradeManagement: React.FC = () => {
 
       // 3. Close and refresh
       setReviewingSubmission(null);
+      addToast({ type: 'warning', title: 'Submission rejected', message: 'Learner may retry the assessment.' });
       await fetchSubmissions();
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to reject submission';
+      addToast({ type: 'error', title: 'Failed to reject', message: msg });
       console.error('Reject error:', err);
-      alert(`Error: ${msg}`);
     } finally {
       setIsSubmittingReview(false);
     }
@@ -569,7 +583,10 @@ export const GradeManagement: React.FC = () => {
     const quizBlocks = moduleData?.blocks.filter(b => b.type === 'quiz') || [];
 
     return (
-      <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+      <div
+        className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+        onClick={(e) => { if (e.target === e.currentTarget) setReviewingSubmission(null); }}
+      >
         <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
 
           {/* ---- Header ---- */}
