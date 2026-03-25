@@ -11,6 +11,7 @@ import React, { useState } from 'react';
 import { BlockType } from '../functions/src/types';
 import { useModule } from '../hooks/useModule';
 import { Button } from '../components/ui/Button';
+import { RichTextEditorMini } from '../components/ui/RichTextEditorMini';
 import { BlockEditor } from '../components/builder/BlockEditor';
 import {
   Plus,
@@ -194,10 +195,9 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Description
               </label>
-              <textarea
-                value={module.description || ''}
-                onChange={(e) => updateModuleMetadata({ description: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-gray-900 bg-white text-sm resize-y"
+              <RichTextEditorMini
+                content={module.description || ''}
+                onChange={(html) => updateModuleMetadata({ description: html })}
                 placeholder="Brief description of what this module covers..."
                 rows={2}
               />

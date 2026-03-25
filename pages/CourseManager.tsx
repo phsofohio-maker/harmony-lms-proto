@@ -10,6 +10,7 @@ import React, { useState } from 'react';
 import { Course, CourseCategory, Module } from '../functions/src/types';
 import { Settings, FileEdit, Trash2, Plus, Search, Layers, AlertCircle, Globe, Lock, Loader2, RefreshCw, X, Scale, AlertTriangle, Save } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { RichTextEditorMini } from '../components/ui/RichTextEditorMini';
 import { cn, generateId } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/useToast';
@@ -261,12 +262,11 @@ export const CourseManager: React.FC<CourseManagerProps> = ({ onNavigate }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  value={newCourse.description}
-                  onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
-                  placeholder="Brief description of this course..."
+                <RichTextEditorMini
+                  content={newCourse.description}
+                  onChange={(html) => setNewCourse({ ...newCourse, description: html })}
+                  placeholder="Brief course description..."
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 />
               </div>
 
