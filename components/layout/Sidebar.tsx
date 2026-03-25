@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User, UserRoleType } from '../../functions/src/types';
 import {
   BookOpen,
@@ -11,9 +11,12 @@ import {
   ClipboardCheck,
   UserPlus,
   AlertTriangle,
-  UsersRound
+  UsersRound,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { cn } from '../../utils';
+import { useAppSound } from '../../hooks/useAppSound';
 
 interface SidebarProps {
   user: User | null;
@@ -23,6 +26,9 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ user, currentPath, onNavigate, onLogout }) => {
+  const { isSoundEnabled, toggleSound } = useAppSound();
+  const [soundOn, setSoundOn] = useState(isSoundEnabled());
+
   if (!user) return null;
 
   const NavItem = ({ path, icon: Icon, label }: { path: string, icon: any, label: string }) => {
@@ -91,6 +97,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, currentPath, onNavigate,
             <p className="text-xs text-white/50 truncate capitalize font-semibold">{user.role}</p>
           </div>
         </div>
+        <button
+          onClick={() => setSoundOn(toggleSound())}
+          className="flex w-full items-center gap-2 text-white/50 hover:text-white text-xs px-1 mb-3 transition-colors"
+        >
+          {soundOn ? <Volume2 className="h-4 w-4" strokeWidth={1.75} /> : <VolumeX className="h-4 w-4" strokeWidth={1.75} />}
+          <span>{soundOn ? 'Sound on' : 'Sound off'}</span>
+        </button>
         <button
           onClick={onLogout}
           className="flex w-full items-center gap-2 text-white/50 hover:text-white text-sm px-1 transition-colors"

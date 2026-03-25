@@ -36,6 +36,7 @@ import {
   Loader2, Upload,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { BlockSettingsPanel } from './BlockSettingsPanel';
 import { cn } from '../../utils';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../services/firebase';
@@ -79,6 +80,7 @@ interface BlockEditorProps {
 export const BlockEditor: React.FC<BlockEditorProps> = ({
   block, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast
 }) => {
+  const [showSettings, setShowSettings] = useState(false);
 
   const handleChange = (field: string, value: any) => {
     onChange(block.id, { ...block.data, [field]: value });
@@ -858,12 +860,31 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <button className="text-xs text-gray-400 hover:text-primary-600 px-2 py-1 hover:bg-gray-50 rounded">Settings</button>
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className={cn(
+              "text-xs px-2 py-1 rounded transition-colors",
+              showSettings
+                ? "text-primary-600 bg-primary-50 font-medium"
+                : "text-gray-400 hover:text-primary-600 hover:bg-gray-50"
+            )}
+          >
+            {showSettings ? 'Close' : 'Settings'}
+          </button>
           <button onClick={() => onDelete(block.id)} className="p-1.5 text-gray-400 hover:text-critical-500 hover:bg-critical-50 rounded transition-colors">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
       </div>
+
+      {showSettings && (
+        <BlockSettingsPanel
+          block={block}
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          onChange={onChange}
+        />
+      )}
 
       <div className="p-5">
         {renderContent()}

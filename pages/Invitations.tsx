@@ -24,6 +24,7 @@ import { Button } from '../components/ui/Button';
 import { UserRoleType, Invitation } from '../functions/src/types';
 import { formatDate, cn } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/useToast';
 import {
   getInvitations,
   createInvitation,
@@ -33,6 +34,7 @@ import {
 
 export const Invitations: React.FC = () => {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRoleType>('staff');
   const [department, setDepartment] = useState('');
@@ -90,12 +92,14 @@ export const Invitations: React.FC = () => {
         user.displayName || 'Admin'
       );
       setInvitations(prev => [newInvite, ...prev]);
+      addToast({ type: 'success', title: 'Invitation sent', message: `Invitation email queued for ${email}` });
       setEmail('');
       setDepartment('');
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to send invitation';
+      addToast({ type: 'error', title: 'Failed to send invitation', message: msg });
       setSendError(msg);
     } finally {
       setIsSending(false);

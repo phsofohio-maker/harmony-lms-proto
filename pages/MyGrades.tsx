@@ -14,12 +14,14 @@ import { Button } from '../components/ui/Button';
 import { GradeBreakdown } from '../components/grades/GradeBreakdown';
 import { formatDate, cn } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/useToast';
 import { getUserEnrollments } from '../services/enrollmentService';
 import { getPublishedCourses } from '../services/courseService';
 import { getSavedCourseGrade } from '../services/courseGradeService';
 
 export const MyGrades: React.FC = () => {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -96,11 +98,11 @@ export const MyGrades: React.FC = () => {
                 <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
                 Refresh
             </Button>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => window.print()}>
                 <Printer className="h-4 w-4" />
                 Print Transcript
             </Button>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => addToast({ type: 'info', title: 'Coming soon', message: 'PDF export will be available with CE Credit Vault in Phase 4.' })}>
                 <Download className="h-4 w-4" />
                 Export PDF
             </Button>

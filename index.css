@@ -31,3 +31,11 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
 }
+
+@media print {
+  nav, aside, .sidebar, [data-sidebar] {
+    display: none !important;
+  }
+  main { margin-left: 0 !important; }
+  body { background: white !important; }
+}

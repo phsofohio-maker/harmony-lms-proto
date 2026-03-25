@@ -17,6 +17,7 @@ import { collection, doc, deleteDoc, getDocs, writeBatch } from 'firebase/firest
 import { db } from '../services/firebase';
 import { auditService } from '../services/auditService';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/useToast';
 import { Button } from '../components/ui/Button';
 import { CoverImagePicker } from '../components/builder/CoverImagePicker';
 import { cn } from '../utils';
@@ -59,6 +60,7 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
   onBack,
 }) => {
   const { user } = useAuth();
+  const { addToast } = useToast();
 
   // Data state
   const [course, setCourse] = useState<Course | null>(null);
@@ -176,7 +178,10 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
         availability,
       });
       setIsDirty(false);
+      addToast({ type: 'success', title: 'Changes saved' });
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      addToast({ type: 'error', title: 'Failed to save changes', message: msg });
       console.error('Failed to save course:', err);
     } finally {
       setIsSaving(false);
@@ -200,7 +205,10 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
         );
       }
       setCourse({ ...course, status: newStatus });
+      addToast({ type: 'success', title: `Course ${newStatus === 'published' ? 'published' : 'unpublished'}` });
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      addToast({ type: 'error', title: 'Failed to update status', message: msg });
       console.error('Failed to toggle publish:', err);
     } finally {
       setIsPublishing(false);
@@ -231,7 +239,10 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
       setModules(updated);
       setShowAddModule(false);
       setNewModule({ title: '', weight: 0, isCritical: false, passingScore: 80, estimatedMinutes: 15 });
+      addToast({ type: 'success', title: 'Module added' });
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      addToast({ type: 'error', title: 'Failed to create module', message: msg });
       console.error('Failed to add module:', err);
     } finally {
       setIsAddingModule(false);
@@ -262,7 +273,10 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
       const updated = await getModules(courseId);
       setModules(updated);
       setConfirmDeleteModuleId(null);
+      addToast({ type: 'success', title: 'Module deleted' });
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      addToast({ type: 'error', title: 'Failed to delete module', message: msg });
       console.error('Failed to delete module:', err);
     } finally {
       setIsDeletingModule(false);
@@ -332,7 +346,13 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
-              onClick={onBack}
+              onClick={() => {
+                if (isDirty) {
+                  const confirmed = window.confirm('You have unsaved changes. Are you sure you want to leave?');
+                  if (!confirmed) return;
+                }
+                onBack();
+              }}
               className="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
             >
               <ArrowLeft className="h-5 w-5" />

@@ -19,6 +19,7 @@
 
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
@@ -235,7 +236,7 @@ const AppContent: React.FC = () => {
         return <Invitations />;
 
       case '/users':
-        return <UserManagement />;
+        return <UserManagement onNavigate={handleNavigate} />;
 
       case '/cohorts':
         return <CohortManagement />;
@@ -265,7 +266,9 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => (
   <AuthProvider>
-    <AppContent />
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
   </AuthProvider>
 );
 

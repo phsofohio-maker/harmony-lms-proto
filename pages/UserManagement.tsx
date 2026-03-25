@@ -9,17 +9,23 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, Enrollment, Course } from '../functions/src/types';
-import { Users, Search, MoreVertical, ShieldCheck, Mail, PlusCircle, Book, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { Users, Search, MoreVertical, ShieldCheck, Mail, PlusCircle, Book, Loader2, RefreshCw, AlertCircle, UserPlus } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { cn } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/useToast';
 import { useCourses } from '../hooks/useCourses';
 import { createEnrollment, getUserEnrollments } from '../services/enrollmentService';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
-export const UserManagement: React.FC = () => {
+interface UserManagementProps {
+  onNavigate?: (path: string) => void;
+}
+
+export const UserManagement: React.FC<UserManagementProps> = ({ onNavigate }) => {
   const { user: currentUser } = useAuth();
+  const { addToast } = useToast();
   const { courses } = useCourses();
   const [users, setUsers] = useState<User[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -81,9 +87,14 @@ export const UserManagement: React.FC = () => {
 
     try {
       await createEnrollment(userId, courseId, currentUser.uid, currentUser.displayName);
+      const targetUser = users.find(u => u.uid === userId);
+      const course = courses.find(c => c.id === courseId);
+      addToast({ type: 'success', title: `${targetUser?.displayName || 'User'} enrolled`, message: `Enrolled in ${course?.title || 'course'}` });
       setEnrollModalUserId(null);
       await fetchData();
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      addToast({ type: 'error', title: 'Failed to enroll user', message: msg });
       console.error('Failed to enroll user:', err);
     } finally {
       setIsEnrolling(false);
@@ -156,7 +167,10 @@ export const UserManagement: React.FC = () => {
             <RefreshCw className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')} />
             Refresh
           </Button>
-          <Button>+ Add Staff Member</Button>
+          <Button onClick={() => onNavigate?.('/invitations')} className="gap-2">
+            <UserPlus className="h-4 w-4" />
+            Add Staff Member
+          </Button>
         </div>
       </div>
 
