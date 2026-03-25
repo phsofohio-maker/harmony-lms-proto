@@ -28,6 +28,7 @@ import { cn } from '../utils';
 import { useEnrollment } from '../hooks/useUserEnrollments';
 import { useCourseProgress } from '../hooks/useModuleProgress';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/useToast';
 
 // Services
 import { getCourse, getModules } from '../services/courseService';
@@ -46,6 +47,7 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
   onBack,
 }) => {
   const { user } = useAuth();
+  const { addToast } = useToast();
   
   // Course data
   const [course, setCourse] = useState<Course | null>(null);
@@ -100,9 +102,14 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
 
   // Handle enrollment
   const handleEnroll = async () => {
-    const success = await enroll();
-    if (success) {
-      // Optionally start first module
+    try {
+      const success = await enroll();
+      if (success) {
+        addToast({ type: 'success', title: 'Enrolled', message: `You are now enrolled in ${course?.title || 'this course'}` });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      addToast({ type: 'error', title: 'Failed to enroll', message: msg });
     }
   };
 

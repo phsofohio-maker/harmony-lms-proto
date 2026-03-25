@@ -34,7 +34,7 @@ export function useAppSound() {
     playButton: () => play(Snd.SOUNDS.BUTTON),
     playNotification: () => play(Snd.SOUNDS.NOTIFICATION),
     playCaution: () => play(Snd.SOUNDS.CAUTION),
-    playError: () => play(Snd.SOUNDS.DISABLED),
+    playError: () => play(Snd.SOUNDS.TRANSITION_DOWN),
     toggleSound: () => {
       const next = !isEnabled();
       localStorage.setItem(SOUND_KEY, String(next));
