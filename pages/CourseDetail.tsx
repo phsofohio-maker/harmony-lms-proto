@@ -10,6 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { Course, Module } from '../functions/src/types';
 import { Button } from '../components/ui/Button';
+import { RichTextRenderer } from '../components/ui/RichTextRenderer';
 import { 
   ArrowLeft, 
   BookOpen, 
@@ -192,7 +193,7 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
               </div>
               
               <h1 className="text-2xl font-bold text-gray-900 mb-2">{course.title}</h1>
-              <p className="text-gray-600 mb-4">{course.description}</p>
+              <RichTextRenderer content={course.description || ''} className="text-gray-600 mb-4" />
               
               <div className="flex items-center gap-6 text-sm text-gray-500">
                 <span className="flex items-center gap-1">

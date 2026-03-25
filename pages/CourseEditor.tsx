@@ -19,6 +19,7 @@ import { auditService } from '../services/auditService';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/useToast';
 import { Button } from '../components/ui/Button';
+import { RichTextEditorMini } from '../components/ui/RichTextEditorMini';
 import { CoverImagePicker } from '../components/builder/CoverImagePicker';
 import { cn } from '../utils';
 import {
@@ -435,11 +436,11 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <textarea
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
+                  <RichTextEditorMini
+                    content={editDescription}
+                    onChange={(html) => setEditDescription(html)}
+                    placeholder="Describe what this course covers..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                   />
                 </div>
                 <div>

@@ -13,6 +13,7 @@ function normalizeYouTubeUrl(url: string): string {
   return trimmed;
 }
 import { cn } from '../../utils';
+import { RichTextRenderer } from '../ui/RichTextRenderer';
 import { Info, AlertTriangle, AlertOctagon, FileText, ChevronDown, ChevronUp, CheckCircle, Check } from 'lucide-react';
 import { CorrectionLogPlayer } from './CorrectionLogPlayer';
 import { ObjSubjPlayer } from './ObjSubjPlayer';
@@ -39,7 +40,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onQuizAnswe
       const variant = textData.variant || 'paragraph';
 
       if (variant === 'paragraph') {
-        return <div className="prose prose-slate max-w-none text-gray-700 mb-6 whitespace-pre-wrap">{textData.content}</div>;
+        return <RichTextRenderer content={textData.content || ''} className="text-sm leading-relaxed mb-6" />;
       }
 
       const styles = {
@@ -54,9 +55,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onQuizAnswe
       return (
         <div className={cn("p-4 rounded-lg border flex gap-4 mb-6", styles.bg, styles.border)}>
           <Icon className={cn("h-5 w-5 shrink-0 mt-0.5", styles.iconColor)} />
-          <div className={cn("text-sm leading-relaxed font-medium", styles.text)}>
-            {textData.content}
-          </div>
+          <RichTextRenderer content={textData.content || ''} className={cn("text-sm leading-relaxed font-medium", styles.text)} />
         </div>
       );
 

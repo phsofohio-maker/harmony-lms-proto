@@ -36,6 +36,7 @@ import {
   Loader2, Upload,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { RichTextEditor } from '../ui/RichTextEditor';
 import { BlockSettingsPanel } from './BlockSettingsPanel';
 import { cn } from '../../utils';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -512,20 +513,13 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
               ))}
             </div>
 
-            <div className={cn(
-              'rounded-md border transition-colors bg-white',
-              currentVariant === 'callout-info' && 'border-l-4 border-l-blue-500 border-gray-200',
-              currentVariant === 'callout-warning' && 'border-l-4 border-l-amber-500 border-gray-200',
-              currentVariant === 'callout-critical' && 'border-l-4 border-l-red-500 border-gray-200',
-              currentVariant === 'paragraph' && 'border-gray-300 focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500'
-            )}>
-              <textarea
-                className="w-full p-4 min-h-[120px] outline-none resize-y rounded-md text-gray-700 text-sm leading-relaxed bg-white"
-                value={textData.content || ''}
-                onChange={(e) => handleChange('content', e.target.value)}
-                placeholder="Start typing your content here..."
-              />
-            </div>
+            <RichTextEditor
+              content={textData.content || ''}
+              onChange={(html) => handleChange('content', html)}
+              placeholder="Start typing your content here..."
+              variant={currentVariant}
+              minHeight="120px"
+            />
           </div>
         );
 
