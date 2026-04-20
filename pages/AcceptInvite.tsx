@@ -183,7 +183,7 @@ export const AcceptInvite: React.FC<AcceptInviteProps> = ({ token, onComplete })
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-primary-50 mb-4">
             <UserPlus className="h-7 w-7 text-primary-600" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900">Welcome to Harmony Health</h1>
+          <h1 className="text-xl font-bold text-gray-900">Welcome to Parrish HALO</h1>
           <p className="text-gray-500 text-sm mt-1">Complete your account setup to get started.</p>
         </div>
 

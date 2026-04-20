@@ -143,20 +143,20 @@ export const createInvitation = async (
   await setDoc(mailDocRef, {
     to: email,
     message: {
-      subject: 'You\'re Invited to Harmony Health LMS',
+      subject: 'You\'re Invited to Parrish HALO LMS',
       html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+        <div style="font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
           <div style="text-align: center; margin-bottom: 32px;">
-            <h1 style="color: #1a1a2e; font-size: 24px; margin: 0;">Harmony Health LMS</h1>
+            <h1 style="color: #011e84; font-size: 24px; margin: 0;">Parrish HALO LMS</h1>
             <p style="color: #6b7280; font-size: 14px; margin-top: 4px;">Clinical Training Portal</p>
           </div>
           <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px;">
             <h2 style="color: #1f2937; font-size: 20px; margin: 0 0 16px;">You've Been Invited</h2>
             <p style="color: #4b5563; line-height: 1.6; margin: 0 0 8px;">
-              <strong>${actorName}</strong> has invited you to join the Harmony Health training portal as a <strong>${role}</strong>.
+              <strong>${actorName}</strong> has invited you to join the Parrish HALO training portal as a <strong>${role}</strong>.
             </p>
             ${department ? `<p style="color: #6b7280; font-size: 14px; margin: 0 0 24px;">Department: ${department}</p>` : '<div style="height: 24px;"></div>'}
-            <a href="${acceptUrl}" style="display: inline-block; background: #4f46e5; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+            <a href="${acceptUrl}" style="display: inline-block; background: #1e9e49; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
               Accept Invitation & Set Password
             </a>
             <p style="color: #9ca3af; font-size: 12px; margin-top: 24px;">
@@ -230,18 +230,18 @@ export const resendInvitation = async (
   await setDoc(mailDocRef, {
     to: data.email,
     message: {
-      subject: 'Reminder: You\'re Invited to Harmony Health LMS',
+      subject: 'Reminder: You\'re Invited to Parrish HALO LMS',
       html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+        <div style="font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
           <div style="text-align: center; margin-bottom: 32px;">
-            <h1 style="color: #1a1a2e; font-size: 24px; margin: 0;">Harmony Health LMS</h1>
+            <h1 style="color: #011e84; font-size: 24px; margin: 0;">Parrish HALO LMS</h1>
           </div>
           <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px;">
             <h2 style="color: #1f2937; font-size: 20px; margin: 0 0 16px;">Invitation Reminder</h2>
             <p style="color: #4b5563; line-height: 1.6; margin: 0 0 24px;">
-              This is a reminder to complete your account setup for the Harmony Health training portal.
+              This is a reminder to complete your account setup for the Parrish HALO training portal.
             </p>
-            <a href="${acceptUrl}" style="display: inline-block; background: #4f46e5; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <a href="${acceptUrl}" style="display: inline-block; background: #1e9e49; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
               Accept Invitation & Set Password
             </a>
             <p style="color: #9ca3af; font-size: 12px; margin-top: 24px;">

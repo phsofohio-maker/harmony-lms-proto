@@ -1,35 +1,47 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  /* Primary Green Scale — Clinical Emerald */
-  --color-primary-50: #F0FBF5;
-  --color-primary-100: #DCF7E9;
-  --color-primary-200: #B6F0D3;
-  --color-primary-300: #86E4B6;
-  --color-primary-400: #4FD493;
-  --color-primary-500: #1DB86F;
-  --color-primary-600: #159A61;
-  --color-primary-700: #0F7B4F;
-  --color-primary-800: #0B6637;
-  --color-primary-900: #064E2B;
+  /* Primary Green Scale — HALO Brand Green (#1e9e49) */
+  --color-primary-50: #e8f5ee;
+  --color-primary-100: #d1ebdd;
+  --color-primary-200: #a3d7bb;
+  --color-primary-300: #75c399;
+  --color-primary-400: #47af77;
+  --color-primary-500: #1e9e49;
+  --color-primary-600: #178a3e;
+  --color-primary-700: #127634;
+  --color-primary-800: #0d6229;
+  --color-primary-900: #084e1f;
+
+  /* Navy Scale — HALO Sidebar & Secondary Blue */
+  --color-navy-50: #eef3fb;
+  --color-navy-100: #dde7f7;
+  --color-navy-200: #a5b8f7;
+  --color-navy-300: #85a4eb;
+  --color-navy-400: #4e84cb;
+  --color-navy-500: #0d529d;
+  --color-navy-600: #13409b;
+  --color-navy-700: #092783;
+  --color-navy-800: #071e81;
+  --color-navy-900: #011e84;
 
   /* Semantic */
-  --color-success-500: #0F7B4F;
-  --color-success-600: #0B6637;
-  --color-warning-500: #f59e0b;
+  --color-success-500: #1e9e49;
+  --color-success-600: #178a3e;
+  --color-warning-500: #e6a817;
   --color-warning-600: #D97706;
-  --color-critical-500: #ef4444;
-  --color-critical-600: #DC2626;
-  --color-info-500: #3B82F6;
-  --color-info-600: #2563EB;
+  --color-critical-500: #dc3545;
+  --color-critical-600: #c82333;
+  --color-info-500: #0d529d;
+  --color-info-600: #0a61a0;
 
-  /* Shadows — Clinical, subtle */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  /* Shadows — Clinical, subtle (navy-tinted) */
+  --shadow-xs: 0 1px 2px 0 rgba(1, 30, 132, 0.04);
+  --shadow-sm: 0 1px 3px 0 rgba(1, 30, 132, 0.06), 0 1px 2px -1px rgba(1, 30, 132, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(1, 30, 132, 0.06), 0 2px 4px -2px rgba(1, 30, 132, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(1, 30, 132, 0.06), 0 4px 6px -4px rgba(1, 30, 132, 0.04);
 }
 
 @media print {

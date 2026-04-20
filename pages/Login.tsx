@@ -69,15 +69,23 @@ export const Login: React.FC = () => {
   const displayError = localError || error;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-lg shadow-xs border border-gray-200 overflow-hidden">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{
+        backgroundImage: 'url(/images/HALO_Background.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundColor: '#fafbf9',
+      }}
+    >
+      <div className="bg-white/85 backdrop-blur-xl w-full max-w-[420px] rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         {/* Logo & Header */}
         <div className="pt-10 pb-6 px-8 text-center">
           <div className="flex items-center justify-center mb-6">
             <img
-              src="/images/HHCA_LMS_LogoPNG_.png"
-              alt="Harmony Health Care Assistant"
-              className="max-w-[200px] w-auto"
+              src="/images/FULL_PARRISH_HALO_LOGOEPS_.svg"
+              alt="Parrish HALO"
+              className="w-[280px] h-auto object-contain"
             />
           </div>
           <p className="text-gray-500 text-sm">Secure Clinical Training Platform</p>
@@ -97,7 +105,7 @@ export const Login: React.FC = () => {
 
           {/* Email Field */}
           <div className="space-y-1.5">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="block text-[13px] font-semibold text-gray-700">
               Email Address
             </label>
             <div className="relative">
@@ -108,8 +116,8 @@ export const Login: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={cn(
-                  "w-full pl-10 pr-4 py-2.5 border rounded-md text-sm transition-colors",
-                  "focus:outline-none focus:border-primary-600 focus:shadow-[0_0_0_3px_rgba(15,123,79,0.12)]",
+                  "w-full pl-10 pr-4 py-2.5 border rounded-[10px] text-[15px] transition-colors",
+                  "focus:outline-none focus:border-primary-500 focus:shadow-[0_0_0_3px_rgba(30,158,73,0.12)]",
                   "bg-white text-gray-700 placeholder:text-gray-400",
                   displayError ? "border-red-300" : "border-gray-300"
                 )}
@@ -122,7 +130,7 @@ export const Login: React.FC = () => {
 
           {/* Password Field */}
           <div className="space-y-1.5">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="password" className="block text-[13px] font-semibold text-gray-700">
               Password
             </label>
             <div className="relative">
@@ -133,8 +141,8 @@ export const Login: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={cn(
-                  "w-full pl-10 pr-12 py-2.5 border rounded-md text-sm transition-colors",
-                  "focus:outline-none focus:border-primary-600 focus:shadow-[0_0_0_3px_rgba(15,123,79,0.12)]",
+                  "w-full pl-10 pr-12 py-2.5 border rounded-[10px] text-[15px] transition-colors",
+                  "focus:outline-none focus:border-primary-500 focus:shadow-[0_0_0_3px_rgba(30,158,73,0.12)]",
                   "bg-white text-gray-700 placeholder:text-gray-400",
                   displayError ? "border-red-300" : "border-gray-300"
                 )}
@@ -158,7 +166,7 @@ export const Login: React.FC = () => {
               <button
                 type="button"
                 onClick={() => { setShowForgotPassword(true); setResetEmail(email); setResetSent(false); setLocalError(null); clearError(); }}
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                className="text-sm text-navy-500 hover:text-navy-600 font-medium"
               >
                 Forgot Password?
               </button>
@@ -177,7 +185,7 @@ export const Login: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => { setShowForgotPassword(false); setResetSent(false); }}
-                    className="text-sm text-primary-600 hover:text-primary-700 font-medium mt-2"
+                    className="text-sm text-navy-500 hover:text-navy-600 font-medium mt-2"
                   >
                     Back to Sign In
                   </button>
@@ -191,7 +199,7 @@ export const Login: React.FC = () => {
                       type="email"
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-primary-600 focus:shadow-[0_0_0_3px_rgba(15,123,79,0.12)]"
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-[10px] text-sm focus:outline-none focus:border-primary-500 focus:shadow-[0_0_0_3px_rgba(30,158,73,0.12)]"
                       placeholder="Enter your email"
                       disabled={resetLoading}
                     />
@@ -231,7 +239,7 @@ export const Login: React.FC = () => {
         </form>
 
         {/* Footer */}
-        <div className="bg-gray-50 px-8 py-4 text-center border-t border-gray-200">
+        <div className="bg-gray-50/80 px-8 py-4 text-center border-t border-gray-200">
           <p className="text-xs text-gray-500">
             Proprietary Software for Parrish Health Systems
           </p>

@@ -1,7 +1,7 @@
 /* TipTap editor content styles — scoped to .tiptap-content */
 
 .tiptap-content {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 0.875rem;
   line-height: 1.6;
   color: #374151;
@@ -57,15 +57,15 @@
 
 /* Links */
 .tiptap-content a {
-  color: #0F7B4F;
+  color: #0d529d;
   text-decoration: underline;
-  text-decoration-color: #86E4B6;
+  text-decoration-color: #a5b8f7;
   text-underline-offset: 2px;
   cursor: pointer;
 }
 .tiptap-content a:hover {
-  color: #064E2B;
-  text-decoration-color: #0F7B4F;
+  color: #011e84;
+  text-decoration-color: #0d529d;
 }
 
 /* Highlight (clinical emphasis) */
@@ -80,8 +80,8 @@
   color: #991B1B;
 }
 .tiptap-content mark[data-color="green"] {
-  background-color: #DCF7E9;
-  color: #064E2B;
+  background-color: #e8f5ee;
+  color: #084e1f;
 }
 .tiptap-content mark[data-color="blue"] {
   background-color: #DBEAFE;

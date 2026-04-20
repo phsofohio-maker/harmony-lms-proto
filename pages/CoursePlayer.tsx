@@ -746,7 +746,7 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
 
           <div className="bg-gray-50 rounded border border-gray-200 p-4 mb-6 text-xs text-gray-500">
             Completed: {new Date().toLocaleDateString()}<br/>
-            {courseGrade && <>Certificate ID: HHCA-{courseGrade.courseId.slice(-8).toUpperCase()}</>}
+            {courseGrade && <>Certificate ID: HALO-{courseGrade.courseId.slice(-8).toUpperCase()}</>}
           </div>
 
           <div className="flex gap-3 justify-center">
@@ -992,7 +992,7 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
           </div>
 
           <div className="text-center mt-8 text-xs text-gray-400">
-            Harmony Health LMS &bull; Secure Audit Logging Enabled
+            Parrish HALO LMS &bull; Secure Audit Logging Enabled
           </div>
         </div>
       </div>
