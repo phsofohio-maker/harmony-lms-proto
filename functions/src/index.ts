@@ -19,6 +19,7 @@ import {
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { logger } from "firebase-functions/v2";
 import * as admin from "firebase-admin";
+import { google } from "googleapis";
 import { Module } from "./types";
 
 // Initialize Firebase Admin
@@ -741,3 +742,208 @@ export const setUserRole = onCall(async (request) => {
     throw new HttpsError("internal", "Failed to set user role.");
   }
 });
+
+// ============================================
+// FUNCTION: Generate Certificate (CE Credit Vault)
+// ============================================
+
+/**
+ * Generates a certificate for a completed course.
+ *
+ * Pipeline:
+ * 1. Validate the certificate request
+ * 2. Copy the Google Docs template
+ * 3. Replace all placeholder variables
+ * 4. Export as PDF
+ * 5. Upload PDF to Firebase Storage
+ * 6. Update the certificate Firestore document
+ *
+ * Requires: Google Docs API enabled, template shared with service account.
+ */
+export const generateCertificate = onCall(
+  { timeoutSeconds: 120 },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Auth required");
+    }
+
+    const { certId } = request.data;
+    if (!certId || typeof certId !== "string") {
+      throw new HttpsError("invalid-argument", "certId is required");
+    }
+
+    try {
+      // 1. Load certificate document
+      const certDoc = await db.collection("certificates").doc(certId).get();
+      if (!certDoc.exists) {
+        throw new HttpsError("not-found", "Certificate not found");
+      }
+      const cert = certDoc.data()!;
+
+      // 2. Load course to get template doc ID
+      const courseDoc = await db.collection("courses").doc(cert.courseId).get();
+      if (!courseDoc.exists) {
+        throw new HttpsError("not-found", "Course not found");
+      }
+      const course = courseDoc.data()!;
+      const templateDocId = cert.templateDocId || course.certificateTemplateDocId;
+
+      if (!templateDocId) {
+        // No template — mark as generated without PDF
+        await certDoc.ref.update({
+          status: "generated",
+          updatedAt: admin.firestore.Timestamp.now(),
+        });
+        return { success: true, certId, hasPdf: false };
+      }
+
+      // 3. Initialize Google APIs with default credentials
+      const auth = new google.auth.GoogleAuth({
+        scopes: [
+          "https://www.googleapis.com/auth/documents",
+          "https://www.googleapis.com/auth/drive",
+        ],
+      });
+      const docs = google.docs({ version: "v1", auth });
+      const drive = google.drive({ version: "v3", auth });
+
+      // 4. Copy the template document
+      const copyResponse = await drive.files.copy({
+        fileId: templateDocId,
+        requestBody: {
+          name: `Certificate - ${cert.studentName} - ${cert.courseName}`,
+        },
+      });
+      const generatedDocId = copyResponse.data.id;
+      if (!generatedDocId) {
+        throw new Error("Failed to copy template document");
+      }
+
+      // 5. Load org config for issuer name
+      let issuerName = cert.issuerName || "Parrish Health Systems Education Department";
+      let orgName = "Parrish Health Systems";
+      try {
+        const orgDoc = await db
+          .collection("organizations")
+          .doc(cert.orgId || "parrish")
+          .get();
+        if (orgDoc.exists) {
+          const orgData = orgDoc.data()!;
+          issuerName = orgData.issuerName || issuerName;
+          orgName = orgData.name || orgName;
+        }
+      } catch {
+        // Use defaults
+      }
+
+      // 6. Replace placeholders in the document
+      const replacements: Record<string, string> = {
+        "{{STUDENT_NAME}}": cert.studentName || "",
+        "{{COURSE_TITLE}}": cert.courseName || "",
+        "{{COMPLETION_DATE}}": new Date(cert.issuedAt).toLocaleDateString(
+          "en-US",
+          { year: "numeric", month: "long", day: "numeric" }
+        ),
+        "{{GRADE}}": `${cert.grade}%`,
+        "{{CERT_ID}}": certId,
+        "{{ORG_NAME}}": orgName,
+        "{{ISSUER_NAME}}": issuerName,
+        "{{CE_CREDITS}}": `${cert.ceCredits}`,
+      };
+
+      const replaceRequests = Object.entries(replacements).map(
+        ([placeholder, value]) => ({
+          replaceAllText: {
+            containsText: { text: placeholder, matchCase: true },
+            replaceText: value,
+          },
+        })
+      );
+
+      await docs.documents.batchUpdate({
+        documentId: generatedDocId,
+        requestBody: { requests: replaceRequests },
+      });
+
+      // 7. Export as PDF
+      const pdfResponse = await drive.files.export(
+        { fileId: generatedDocId, mimeType: "application/pdf" },
+        { responseType: "arraybuffer" }
+      );
+
+      const pdfBuffer = Buffer.from(pdfResponse.data as ArrayBuffer);
+
+      // 8. Upload to Firebase Storage
+      const storagePath =
+        cert.pdfStoragePath ||
+        `certificates/${cert.orgId || "parrish"}/${cert.userId}/${cert.courseId}/${certId}.pdf`;
+      const bucket = admin.storage().bucket();
+      const file = bucket.file(storagePath);
+      await file.save(pdfBuffer, {
+        contentType: "application/pdf",
+        metadata: {
+          metadata: {
+            certId,
+            userId: cert.userId,
+            courseId: cert.courseId,
+          },
+        },
+      });
+
+      // 9. Update certificate document
+      await certDoc.ref.update({
+        status: "generated",
+        generatedDocId,
+        pdfStoragePath: storagePath,
+        updatedAt: admin.firestore.Timestamp.now(),
+      });
+
+      // 10. Clean up: delete the generated Google Doc (we have the PDF)
+      try {
+        await drive.files.delete({ fileId: generatedDocId });
+      } catch {
+        // Non-critical — doc will sit in Drive
+        logger.warn("Could not delete generated doc", { generatedDocId });
+      }
+
+      // 11. Audit log
+      await createAuditLog(
+        request.auth.uid,
+        request.auth.token.name || "System",
+        "CERTIFICATE_ISSUED",
+        certId,
+        `Certificate PDF generated for ${cert.studentName} — ${cert.courseName}`,
+        { userId: cert.userId, courseId: cert.courseId }
+      );
+
+      logger.info("Certificate generated", { certId, storagePath });
+      return { success: true, certId, hasPdf: true, storagePath };
+    } catch (error: any) {
+      logger.error("Certificate generation failed", { certId, error });
+
+      // Update certificate status to failed
+      try {
+        await db.collection("certificates").doc(certId).update({
+          status: "failed",
+          updatedAt: admin.firestore.Timestamp.now(),
+        });
+      } catch {
+        // Non-critical
+      }
+
+      if (error.code && error.code.startsWith("functions/")) {
+        throw error;
+      }
+
+      // Check for common Google API errors
+      if (error.code === 403 || error.status === 403) {
+        throw new HttpsError(
+          "permission-denied",
+          "Cannot access the certificate template. Ensure the Google Doc is shared with the service account."
+        );
+      }
+
+      throw new HttpsError("internal", "Certificate generation failed");
+    }
+  }
+);

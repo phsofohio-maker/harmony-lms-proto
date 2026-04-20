@@ -22,7 +22,8 @@
   "main": "lib/index.js",
   "dependencies": {
     "firebase-admin": "^13.6.1",
-    "firebase-functions": "^7.0.5"
+    "firebase-functions": "^7.0.5",
+    "googleapis": "^171.4.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.12.0",

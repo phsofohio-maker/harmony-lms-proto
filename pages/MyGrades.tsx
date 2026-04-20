@@ -8,8 +8,8 @@
  * @module pages/MyGrades
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Enrollment, Course, CourseGradeCalculation } from '../functions/src/types';
-import { GraduationCap, Award, FileText, CheckCircle2, Download, Printer, Clock, Loader2, AlertCircle, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
+import { Enrollment, Course, CourseGradeCalculation, Certificate } from '../functions/src/types';
+import { GraduationCap, Award, FileText, CheckCircle2, Download, Printer, Clock, Loader2, AlertCircle, RefreshCw, ChevronDown, ChevronRight, BadgeCheck } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { GradeBreakdown } from '../components/grades/GradeBreakdown';
 import { formatDate, cn } from '../utils';
@@ -18,6 +18,8 @@ import { useToast } from '../hooks/useToast';
 import { getUserEnrollments } from '../services/enrollmentService';
 import { getPublishedCourses } from '../services/courseService';
 import { getSavedCourseGrade } from '../services/courseGradeService';
+import { getUserCertificates, getCertificateDownloadUrl, issueCertificate } from '../services/certificateService';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 export const MyGrades: React.FC = () => {
   const { user } = useAuth();
@@ -27,7 +29,10 @@ export const MyGrades: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [courseGrades, setCourseGrades] = useState<Record<string, CourseGradeCalculation>>({});
+  const [certificates, setCertificates] = useState<Record<string, Certificate>>({});
   const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
+  const [downloadingCertId, setDownloadingCertId] = useState<string | null>(null);
+  const [issuingCertCourseId, setIssuingCertCourseId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -55,6 +60,18 @@ export const MyGrades: React.FC = () => {
         }
       }
       setCourseGrades(grades);
+
+      // Fetch certificates
+      try {
+        const certs = await getUserCertificates(user.uid);
+        const certMap: Record<string, Certificate> = {};
+        for (const cert of certs) {
+          certMap[cert.courseId] = cert;
+        }
+        setCertificates(certMap);
+      } catch {
+        // Certificates may not exist yet
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load grades';
       setError(msg);
@@ -67,6 +84,72 @@ export const MyGrades: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Handle certificate download
+  const handleDownloadCert = async (cert: Certificate) => {
+    setDownloadingCertId(cert.certId);
+    try {
+      if (cert.status === 'generated' && cert.pdfStoragePath) {
+        const url = await getCertificateDownloadUrl(cert.pdfStoragePath);
+        if (url) {
+          window.open(url, '_blank');
+          addToast({ type: 'success', title: 'Certificate downloaded' });
+        } else {
+          addToast({ type: 'info', title: 'Certificate issued', message: `Certificate ${cert.certId} — PDF generation pending.` });
+        }
+      } else {
+        addToast({ type: 'info', title: 'Certificate issued', message: `Certificate ${cert.certId} — PDF generation pending.` });
+      }
+    } catch {
+      addToast({ type: 'error', title: 'Download failed', message: 'Could not download certificate.' });
+    } finally {
+      setDownloadingCertId(null);
+    }
+  };
+
+  // Handle issuing a new certificate
+  const handleIssueCert = async (courseId: string) => {
+    if (!user) return;
+    const course = getCourse(courseId);
+    const grade = courseGrades[courseId];
+    if (!course || !grade) return;
+
+    setIssuingCertCourseId(courseId);
+    try {
+      const cert = await issueCertificate({
+        userId: user.uid,
+        courseId,
+        grade: grade.overallScore,
+        ceCredits: course.ceCredits || 0,
+        courseName: course.title,
+        studentName: user.displayName,
+        templateDocId: course.certificateTemplateDocId,
+        actorId: user.uid,
+        actorName: user.displayName,
+      });
+
+      // If there's a template, try to generate the PDF
+      if (course.certificateTemplateDocId) {
+        try {
+          const functions = getFunctions();
+          const generateCert = httpsCallable(functions, 'generateCertificate');
+          await generateCert({ certId: cert.certId });
+          cert.status = 'generated';
+        } catch {
+          // PDF generation failed — cert is still issued but without PDF
+          addToast({ type: 'warning', title: 'Certificate issued', message: 'PDF generation failed. Certificate ID recorded.' });
+        }
+      }
+
+      setCertificates(prev => ({ ...prev, [courseId]: cert }));
+      addToast({ type: 'success', title: 'Certificate issued', message: `Certificate ${cert.certId}` });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to issue certificate';
+      addToast({ type: 'error', title: 'Certificate failed', message: msg });
+    } finally {
+      setIssuingCertCourseId(null);
+    }
+  };
 
   if (!user) return null;
 
@@ -102,7 +185,7 @@ export const MyGrades: React.FC = () => {
                 <Printer className="h-4 w-4" />
                 Print Transcript
             </Button>
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => addToast({ type: 'info', title: 'Coming soon', message: 'PDF export will be available with CE Credit Vault in Phase 4.' })}>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => window.print()}>
                 <Download className="h-4 w-4" />
                 Export PDF
             </Button>
@@ -173,7 +256,39 @@ export const MyGrades: React.FC = () => {
                                         <p className="text-xs font-bold text-gray-400 uppercase mb-1">Grade</p>
                                         <p className="text-sm font-bold text-green-600">{grade ? `${grade.overallScore}%` : e.score !== undefined ? `${e.score}%` : 'Pass'}</p>
                                     </div>
-                                    <Button variant="ghost" size="sm" className="text-primary-600">Certificate</Button>
+                                    {certificates[e.courseId] ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-primary-600 gap-1.5"
+                                        onClick={(ev) => { ev.stopPropagation(); handleDownloadCert(certificates[e.courseId]); }}
+                                        disabled={downloadingCertId === certificates[e.courseId].certId}
+                                      >
+                                        {downloadingCertId === certificates[e.courseId].certId ? (
+                                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        ) : (
+                                          <BadgeCheck className="h-3.5 w-3.5" />
+                                        )}
+                                        {certificates[e.courseId].certId}
+                                      </Button>
+                                    ) : grade?.overallPassed ? (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-primary-600 gap-1.5"
+                                        onClick={(ev) => { ev.stopPropagation(); handleIssueCert(e.courseId); }}
+                                        disabled={issuingCertCourseId === e.courseId}
+                                      >
+                                        {issuingCertCourseId === e.courseId ? (
+                                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        ) : (
+                                          <Award className="h-3.5 w-3.5" />
+                                        )}
+                                        Get Certificate
+                                      </Button>
+                                    ) : (
+                                      <span className="text-xs text-gray-400">--</span>
+                                    )}
                                 </div>
                             </div>
                             {isExpanded && grade && (

@@ -77,6 +77,7 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
   const [editThumbnail, setEditThumbnail] = useState('');
   const [editOpensAt, setEditOpensAt] = useState('');
   const [editClosesAt, setEditClosesAt] = useState('');
+  const [editCertTemplateUrl, setEditCertTemplateUrl] = useState('');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [metadataOpen, setMetadataOpen] = useState(true);
@@ -121,6 +122,7 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
       setEditThumbnail(courseData.thumbnailUrl);
       setEditOpensAt(courseData.availability?.opensAt || '');
       setEditClosesAt(courseData.availability?.closesAt || '');
+      setEditCertTemplateUrl(courseData.certificateTemplateDocId ? `https://docs.google.com/document/d/${courseData.certificateTemplateDocId}/edit` : '');
       setIsDirty(false);
     } catch (err) {
       console.error('Failed to load course:', err);
@@ -144,9 +146,21 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
       editCredits !== course.ceCredits ||
       editThumbnail !== course.thumbnailUrl ||
       editOpensAt !== (course.availability?.opensAt || '') ||
-      editClosesAt !== (course.availability?.closesAt || '');
+      editClosesAt !== (course.availability?.closesAt || '') ||
+      editCertTemplateUrl !== (course.certificateTemplateDocId ? `https://docs.google.com/document/d/${course.certificateTemplateDocId}/edit` : '');
     setIsDirty(changed);
-  }, [editTitle, editDescription, editCategory, editCredits, editThumbnail, editOpensAt, editClosesAt, course]);
+  }, [editTitle, editDescription, editCategory, editCredits, editThumbnail, editOpensAt, editClosesAt, editCertTemplateUrl, course]);
+
+  // Warn on browser tab close with unsaved changes
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
 
   // Save course metadata
   const handleSaveMetadata = async () => {
@@ -156,6 +170,9 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
       const availability = (editOpensAt || editClosesAt)
         ? { opensAt: editOpensAt || undefined, closesAt: editClosesAt || undefined }
         : undefined;
+      // Extract Google Doc ID from URL
+      const certDocIdMatch = editCertTemplateUrl.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
+      const certificateTemplateDocId = certDocIdMatch ? certDocIdMatch[1] : undefined;
       await updateCourse(
         courseId,
         {
@@ -165,6 +182,7 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
           ceCredits: editCredits,
           thumbnailUrl: editThumbnail,
           availability,
+          ...(certificateTemplateDocId !== undefined ? { certificateTemplateDocId } : {}),
         },
         user.uid,
         user.displayName
@@ -177,6 +195,7 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
         ceCredits: editCredits,
         thumbnailUrl: editThumbnail,
         availability,
+        certificateTemplateDocId,
       });
       setIsDirty(false);
       addToast({ type: 'success', title: 'Changes saved' });
@@ -509,6 +528,39 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
                   <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" /> Close date must be after open date.
                   </p>
+                )}
+              </div>
+
+              {/* Certificate Template */}
+              <div className="col-span-2 border-t border-gray-100 pt-4 mt-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Certificate Template
+                  <span className="text-xs text-gray-400 font-normal ml-1">(optional)</span>
+                </label>
+                <p className="text-xs text-gray-400 mb-3">
+                  Paste a Google Docs URL for the certificate template. The template must be shared with the service account at Editor level.
+                </p>
+                <input
+                  type="url"
+                  value={editCertTemplateUrl}
+                  onChange={(e) => setEditCertTemplateUrl(e.target.value)}
+                  placeholder="https://docs.google.com/document/d/..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                {editCertTemplateUrl && !editCertTemplateUrl.match(/\/document\/d\/[a-zA-Z0-9_-]+/) && (
+                  <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> Please enter a valid Google Docs URL.
+                  </p>
+                )}
+                {editCertTemplateUrl && editCertTemplateUrl.match(/\/document\/d\/[a-zA-Z0-9_-]+/) && (
+                  <a
+                    href={editCertTemplateUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary-600 hover:text-primary-700 mt-2 inline-flex items-center gap-1"
+                  >
+                    Preview template &rarr;
+                  </a>
                 )}
               </div>
 

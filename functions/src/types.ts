@@ -252,6 +252,7 @@ export interface Course {
   modules: Module[];
   estimatedHours: number;
   availability?: AvailabilityWindow;
+  certificateTemplateDocId?: string;
 }
 
 // ============================================
@@ -282,7 +283,9 @@ export type AuditActionType =
   | "COHORT_DELETE"
   | "BULK_ENROLLMENT"
   | "CORRECTION_ENTRY"
-  | "LICENSE_GATE_BLOCKED";
+  | "LICENSE_GATE_BLOCKED"
+  | "CERTIFICATE_ISSUED"
+  | "CERTIFICATE_FAILED";
 
 export interface AuditLog {
   id: string;
@@ -394,3 +397,40 @@ export type LicenseStatus = "valid" | "expiring_soon" | "expired" | "not_set";
 
 /** Course categories that require a valid license to access */
 export const LICENSE_REQUIRED_CATEGORIES: CourseCategory[] = ["hospice", "clinical_skills"];
+
+// ============================================
+// CERTIFICATES
+// ============================================
+
+export type CertificateStatus = "pending" | "generated" | "failed";
+
+export interface Certificate {
+  id: string;
+  certId: string;
+  userId: string;
+  courseId: string;
+  orgId: string;
+  issuedAt: string;
+  grade: number;
+  ceCredits: number;
+  courseName: string;
+  studentName: string;
+  issuerName: string;
+  pdfStoragePath: string;
+  templateDocId?: string;
+  generatedDocId?: string;
+  status: CertificateStatus;
+}
+
+// ============================================
+// ORGANIZATION CONFIG
+// ============================================
+
+export interface Organization {
+  id: string;
+  name: string;
+  issuerName: string;
+  certPrefix: string;
+  logoUrl?: string;
+  createdAt: string;
+}

@@ -11,6 +11,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Enrollment,
   CourseGradeCalculation,
+  Certificate,
 } from '../../functions/src/types';
 import {
   Users,
@@ -24,12 +25,15 @@ import {
   XCircle,
   Filter,
   Clock,
+  BadgeCheck,
+  FileX,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { cn, formatDate } from '../../utils';
 import { GradeBreakdown } from './GradeBreakdown';
 import { getCourseEnrollments } from '../../services/enrollmentService';
 import { getCourseGradesForCourse } from '../../services/courseGradeService';
+import { getCourseCertificates, getCertificateDownloadUrl } from '../../services/certificateService';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 
@@ -37,13 +41,14 @@ interface CourseRosterProps {
   courseId: string;
 }
 
-type RosterFilter = 'all' | 'passing' | 'failing' | 'needs_review' | 'not_started';
+type RosterFilter = 'all' | 'passing' | 'failing' | 'needs_review' | 'not_started' | 'has_cert' | 'no_cert';
 
 interface RosterEntry {
   enrollment: Enrollment;
   userName: string;
   userEmail: string;
   courseGrade: CourseGradeCalculation | null;
+  certificate: Certificate | null;
 }
 
 type SortField = 'name' | 'score' | 'completion' | 'status' | 'lastActivity';
@@ -63,15 +68,21 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
     setError(null);
 
     try {
-      // Fetch enrollments and course grades in parallel (bulk)
-      const [enrollments, allCourseGrades] = await Promise.all([
+      // Fetch enrollments, course grades, and certificates in parallel (bulk)
+      const [enrollments, allCourseGrades, allCertificates] = await Promise.all([
         getCourseEnrollments(courseId),
         getCourseGradesForCourse(courseId).catch(() => []),
+        getCourseCertificates(courseId).catch(() => []),
       ]);
 
       // Index grades by userId for O(1) lookup
       const gradesByUserId = new Map<string, CourseGradeCalculation>(
         allCourseGrades.map(g => [g.userId, g] as [string, CourseGradeCalculation])
+      );
+
+      // Index certificates by userId
+      const certsByUserId = new Map<string, Certificate>(
+        allCertificates.map(c => [c.userId, c] as [string, Certificate])
       );
 
       const rosterEntries: RosterEntry[] = [];
@@ -98,6 +109,7 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
           userName,
           userEmail,
           courseGrade: gradesByUserId.get(enrollment.userId) ?? null,
+          certificate: certsByUserId.get(enrollment.userId) ?? null,
         });
       }
 
@@ -126,6 +138,10 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
         return entry.enrollment.status === 'needs_review';
       case 'not_started':
         return entry.enrollment.status === 'not_started' || !entry.courseGrade;
+      case 'has_cert':
+        return entry.certificate !== null;
+      case 'no_cert':
+        return entry.certificate === null && entry.courseGrade?.overallPassed === true;
       default:
         return true;
     }
@@ -271,6 +287,8 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
           { key: 'failing' as const, label: 'Failing' },
           { key: 'needs_review' as const, label: 'Needs Review' },
           { key: 'not_started' as const, label: 'Not Started' },
+          { key: 'has_cert' as const, label: 'Has Certificate' },
+          { key: 'no_cert' as const, label: 'Missing Certificate' },
         ]).map(tab => (
           <button
             key={tab.key}
@@ -306,20 +324,21 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
               <SortHeader field="completion" label="Completion" className="text-center" />
               <th className="px-6 py-3 font-semibold text-gray-700 text-center">Critical Modules</th>
               <SortHeader field="status" label="Status" className="text-center" />
+              <th className="px-6 py-3 font-semibold text-gray-700 text-center">Certificate</th>
               <SortHeader field="lastActivity" label="Last Activity" className="text-center" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
+                <td colSpan={8} className="px-6 py-12 text-center text-gray-400">
                   <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
                   Loading roster...
                 </td>
               </tr>
             ) : sortedEntries.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-gray-400 italic">
+                <td colSpan={8} className="px-6 py-12 text-center text-gray-400 italic">
                   {entries.length === 0
                     ? 'No learners enrolled in this course.'
                     : `No learners matching "${filter}" filter.`}
@@ -403,6 +422,34 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
                       {getStatusBadge(entry)}
                     </td>
 
+                    {/* Certificate */}
+                    <td className="px-6 py-4 text-center">
+                      {entry.certificate ? (
+                        <button
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            if (entry.certificate!.pdfStoragePath && entry.certificate!.status === 'generated') {
+                              getCertificateDownloadUrl(entry.certificate!.pdfStoragePath).then(url => {
+                                if (url) window.open(url, '_blank');
+                              });
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors cursor-pointer"
+                          title={`Certificate ${entry.certificate.certId}`}
+                        >
+                          <BadgeCheck className="h-3 w-3" />
+                          {entry.certificate.certId}
+                        </button>
+                      ) : entry.courseGrade?.overallPassed ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-600 border border-amber-200">
+                          <FileX className="h-3 w-3" />
+                          Not Issued
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-xs">--</span>
+                      )}
+                    </td>
+
                     {/* Last Activity */}
                     <td className="px-6 py-4 text-center text-xs text-gray-500 font-mono">
                       {entry.enrollment.lastAccessedAt
@@ -414,7 +461,7 @@ export const CourseRoster: React.FC<CourseRosterProps> = ({ courseId }) => {
                   {/* Expanded GradeBreakdown */}
                   {expandedUserId === entry.enrollment.userId && (
                     <tr>
-                      <td colSpan={7} className="px-8 py-6 bg-gray-50">
+                      <td colSpan={8} className="px-8 py-6 bg-gray-50">
                         {entry.courseGrade ? (
                           <GradeBreakdown calculation={entry.courseGrade} />
                         ) : (
