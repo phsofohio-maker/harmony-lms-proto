@@ -270,9 +270,30 @@ export const CourseDetail: React.FC<CourseDetailProps> = ({
                       
                       {/* Module Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 truncate">
-                          {module.title}
-                        </h3>
+                        <div className="flex items-center flex-wrap">
+                          <h3 className="font-medium text-gray-900 truncate">
+                            {module.title}
+                          </h3>
+                          {(() => {
+                            const modAvail = checkAvailability(module.availability);
+                            if (modAvail.status === 'not_yet_open') {
+                              return (
+                                <span className="inline-flex items-center gap-1 text-xs text-gray-400 ml-2">
+                                  <Lock className="h-3 w-3" />
+                                  {modAvail.message}
+                                </span>
+                              );
+                            }
+                            if (modAvail.status === 'closed') {
+                              return (
+                                <span className="inline-flex items-center gap-1 text-xs text-red-400 ml-2">
+                                  {modAvail.message}
+                                </span>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
                         <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
                           <span>{module.estimatedMinutes || 0} min</span>
                           <span>Pass: {module.passingScore}%</span>

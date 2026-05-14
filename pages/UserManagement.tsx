@@ -8,8 +8,9 @@
  * @module pages/UserManagement
  */
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { User, Enrollment, Course, UserRoleType } from '../functions/src/types';
-import { Users, Search, MoreVertical, ShieldCheck, Mail, PlusCircle, Book, Loader2, RefreshCw, AlertCircle, UserPlus, KeyRound, Copy, RefreshCcw, Check, X, UserX, UserCheck, ShieldOff, FileText, RotateCcw } from 'lucide-react';
+import { Users, Search, MoreVertical, ShieldCheck, Mail, PlusCircle, Book, Loader2, RefreshCw, AlertCircle, UserPlus, KeyRound, Copy, RefreshCcw, Check, X, UserX, UserCheck, ShieldOff, FileText, RotateCcw, Pencil, IdCard, Briefcase, AlertTriangle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { cn } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,7 +20,13 @@ import { createEnrollment, getUserEnrollments } from '../services/enrollmentServ
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { deactivateStaff, reactivateStaff } from '../services/userManagementService';
+import {
+  deactivateStaff,
+  reactivateStaff,
+  updateStaffProfile,
+  changeStaffRole,
+  StaffProfileUpdate,
+} from '../services/userManagementService';
 
 const TEMP_PW_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
 const generateTempPassword = (): string => {
@@ -267,6 +274,322 @@ const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ onClose, onCrea
   );
 };
 
+// ============================================
+// Edit Staff Modal (Guide 15)
+// ============================================
+// Single modal for profile fields, role changes, and license information.
+// Profile fields write directly to Firestore; role changes route through
+// the existing `setUserRole` Cloud Function. Both run as independent ops
+// — partial success is acceptable (profile saves even if role fails).
+
+interface EditStaffModalProps {
+  user: User;
+  /** Current admin's UID — used to block self-role-change. */
+  currentUserUid: string;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+const ROLE_OPTIONS: { value: UserRoleType; label: string }[] = [
+  { value: 'staff', label: 'Staff' },
+  { value: 'instructor', label: 'Instructor' },
+  { value: 'content_author', label: 'Content Author' },
+  { value: 'admin', label: 'Admin' },
+];
+
+const EditStaffModal: React.FC<EditStaffModalProps> = ({ user, currentUserUid, onClose, onSaved }) => {
+  const { user: currentUser } = useAuth();
+  const { addToast } = useToast();
+
+  const [displayName, setDisplayName] = useState(user.displayName || '');
+  const [department, setDepartment] = useState(user.department || '');
+  const [jobTitle, setJobTitle] = useState(user.jobTitle || '');
+  const [licenseNumber, setLicenseNumber] = useState(user.licenseNumber || '');
+  const [licenseExpiry, setLicenseExpiry] = useState(user.licenseExpiry || '');
+  const [role, setRole] = useState<UserRoleType>(user.role);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Derived: which fields differ from the original user record.
+  const profileDirty =
+    displayName !== (user.displayName || '') ||
+    department !== (user.department || '') ||
+    jobTitle !== (user.jobTitle || '') ||
+    licenseNumber !== (user.licenseNumber || '') ||
+    licenseExpiry !== (user.licenseExpiry || '');
+  const roleDirty = role !== user.role;
+  const isDirty = profileDirty || roleDirty;
+  const trimmedName = displayName.trim();
+  const nameValid = trimmedName.length >= 2;
+  const isSelf = user.uid === currentUserUid;
+
+  // Live license status from the in-form expiry value.
+  const licenseStatus = (() => {
+    if (!licenseExpiry) return null;
+    const expiry = new Date(licenseExpiry);
+    if (Number.isNaN(expiry.getTime())) return null;
+    const days = Math.ceil((expiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    if (days < 0) return { label: 'Expired', tone: 'bg-red-100 text-red-700', days };
+    if (days <= 30) return { label: 'Expiring Soon', tone: 'bg-amber-100 text-amber-700', days };
+    return { label: 'Valid', tone: 'bg-green-100 text-green-700', days };
+  })();
+
+  const clearLicense = () => {
+    setLicenseNumber('');
+    setLicenseExpiry('');
+  };
+
+  const handleSave = async () => {
+    if (!currentUser || isSaving || !isDirty || !nameValid) return;
+    setError(null);
+    setIsSaving(true);
+
+    const actor = { uid: currentUser.uid, displayName: currentUser.displayName };
+    const changes: string[] = [];
+
+    try {
+      // 1) Profile fields → direct Firestore write.
+      if (profileDirty) {
+        const profileUpdates: StaffProfileUpdate = {};
+        if (trimmedName !== (user.displayName || '')) profileUpdates.displayName = trimmedName;
+        if (department !== (user.department || '')) profileUpdates.department = department.trim() || undefined;
+        if (jobTitle !== (user.jobTitle || '')) profileUpdates.jobTitle = jobTitle.trim() || undefined;
+        if (licenseNumber !== (user.licenseNumber || '')) {
+          profileUpdates.licenseNumber = licenseNumber.trim() ? licenseNumber.trim() : null;
+        }
+        if (licenseExpiry !== (user.licenseExpiry || '')) {
+          profileUpdates.licenseExpiry = licenseExpiry ? licenseExpiry : null;
+        }
+        await updateStaffProfile(user.uid, profileUpdates, actor);
+        changes.push('profile updated');
+      }
+
+      // 2) Role change → Cloud Function (separate op; partial success allowed).
+      if (roleDirty) {
+        await changeStaffRole(user.uid, role);
+        changes.push(`role changed to ${role}`);
+      }
+
+      addToast({
+        type: 'success',
+        title: `${trimmedName || user.displayName} updated`,
+        message:
+          changes.join(', ') +
+          (roleDirty
+            ? '. User must sign out and back in for role change to take effect.'
+            : '.'),
+      });
+      onSaved();
+      onClose();
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to update staff member.';
+      setError(msg);
+      addToast({ type: 'error', title: 'Update failed', message: msg });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in duration-200">
+        <div className="p-6 border-b border-gray-200 flex items-start justify-between sticky top-0 bg-white z-10">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Pencil className="h-5 w-5 text-primary-600" />
+              Edit Staff Member
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">{user.email}</p>
+          </div>
+          <button
+            onClick={onClose}
+            disabled={isSaving}
+            className="p-1 hover:bg-gray-100 rounded text-gray-400 disabled:opacity-50"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Section 1: Identity */}
+          <section>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
+              <Briefcase className="h-3.5 w-3.5" />
+              Identity
+            </h4>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1" htmlFor="es-name">
+                  Display Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="es-name"
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  disabled={isSaving}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
+                />
+                {!nameValid && trimmedName.length > 0 && (
+                  <p className="text-[11px] text-red-600 mt-1">Display name must be at least 2 characters.</p>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1" htmlFor="es-dept">Department</label>
+                  <input
+                    id="es-dept"
+                    type="text"
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    disabled={isSaving}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
+                    placeholder="Optional"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1" htmlFor="es-title">Job Title</label>
+                  <input
+                    id="es-title"
+                    type="text"
+                    value={jobTitle}
+                    onChange={(e) => setJobTitle(e.target.value)}
+                    disabled={isSaving}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
+                    placeholder="Optional"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 2: System Role */}
+          <section>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              System Role
+            </h4>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1" htmlFor="es-role">Role</label>
+              <select
+                id="es-role"
+                value={role}
+                onChange={(e) => setRole(e.target.value as UserRoleType)}
+                disabled={isSaving || isSelf}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 bg-white"
+              >
+                {ROLE_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              {isSelf && (
+                <p className="text-[11px] text-gray-500 mt-1">
+                  You cannot change your own role from this UI.
+                </p>
+              )}
+              {roleDirty && !isSelf && (
+                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-800">
+                    Role changes require the user to sign out and back in. JWT custom claims
+                    are baked into the auth token at sign-in time and update on next login.
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Section 3: License Information */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                <IdCard className="h-3.5 w-3.5" />
+                License Information
+              </h4>
+              {(licenseNumber || licenseExpiry) && (
+                <button
+                  type="button"
+                  onClick={clearLicense}
+                  disabled={isSaving}
+                  className="text-[11px] font-semibold text-gray-500 hover:text-red-600 disabled:opacity-50"
+                >
+                  Clear License
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1" htmlFor="es-lic-num">License Number</label>
+                <input
+                  id="es-lic-num"
+                  type="text"
+                  value={licenseNumber}
+                  onChange={(e) => setLicenseNumber(e.target.value)}
+                  disabled={isSaving}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
+                  placeholder="e.g., RN123456"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1" htmlFor="es-lic-exp">License Expiry</label>
+                <input
+                  id="es-lic-exp"
+                  type="date"
+                  value={licenseExpiry}
+                  onChange={(e) => setLicenseExpiry(e.target.value)}
+                  disabled={isSaving}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
+                />
+              </div>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-gray-500">Status:</span>
+              {licenseStatus ? (
+                <>
+                  <span className={cn('px-2 py-0.5 rounded text-[10px] font-bold uppercase', licenseStatus.tone)}>
+                    {licenseStatus.label}
+                  </span>
+                  <span className="text-[11px] text-gray-500">
+                    {licenseStatus.days >= 0
+                      ? `${licenseStatus.days} day${licenseStatus.days === 1 ? '' : 's'} remaining`
+                      : `${Math.abs(licenseStatus.days)} day${Math.abs(licenseStatus.days) === 1 ? '' : 's'} ago`}
+                  </span>
+                </>
+              ) : (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-500">
+                  N/A
+                </span>
+              )}
+            </div>
+          </section>
+
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-red-800">{error}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 border-t border-gray-200 flex gap-3 sticky bottom-0 bg-white">
+          <Button variant="outline" className="flex-1" onClick={onClose} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button
+            className="flex-1"
+            onClick={handleSave}
+            isLoading={isSaving}
+            disabled={isSaving || !isDirty || !nameValid}
+          >
+            Save Changes
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface UserManagementProps {
   onNavigate?: (path: string) => void;
 }
@@ -284,13 +607,54 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onNavigate }) =>
   const [searchFilter, setSearchFilter] = useState('');
   const [showCreateAccount, setShowCreateAccount] = useState(false);
 
-  // Active / inactive tab + deactivation/reactivation modal state (Guide 15).
+  // Active / inactive tab + deactivation/reactivation/edit modal state (Guide 15).
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
   const [deactivatingUser, setDeactivatingUser] = useState<User | null>(null);
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [deactivateConfirmText, setDeactivateConfirmText] = useState('');
   const [reactivatingUser, setReactivatingUser] = useState<User | null>(null);
   const [isReactivating, setIsReactivating] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  // Row action menu — the three-dot button on each row opens this floating
+  // menu via a portal so it isn't clipped by the table card's overflow-hidden.
+  const [openMenuUid, setOpenMenuUid] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
+
+  const toggleRowMenu = (uid: string, anchor: HTMLElement) => {
+    if (openMenuUid === uid) {
+      setOpenMenuUid(null);
+      setMenuPosition(null);
+      return;
+    }
+    const rect = anchor.getBoundingClientRect();
+    setMenuPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    setOpenMenuUid(uid);
+  };
+
+  const closeRowMenu = () => {
+    setOpenMenuUid(null);
+    setMenuPosition(null);
+  };
+
+  useEffect(() => {
+    if (!openMenuUid) return;
+    const onDocMouseDown = (e: MouseEvent) => {
+      const target = e.target as Element | null;
+      if (target && !target.closest('[data-row-menu]')) {
+        closeRowMenu();
+      }
+    };
+    const onScrollOrResize = () => closeRowMenu();
+    window.addEventListener('mousedown', onDocMouseDown);
+    window.addEventListener('scroll', onScrollOrResize, true);
+    window.addEventListener('resize', onScrollOrResize);
+    return () => {
+      window.removeEventListener('mousedown', onDocMouseDown);
+      window.removeEventListener('scroll', onScrollOrResize, true);
+      window.removeEventListener('resize', onScrollOrResize);
+    };
+  }, [openMenuUid]);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -466,6 +830,61 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onNavigate }) =>
           onCreated={fetchData}
         />
       )}
+
+      {editingUser && currentUser && (
+        <EditStaffModal
+          user={editingUser}
+          currentUserUid={currentUser.uid}
+          onClose={() => setEditingUser(null)}
+          onSaved={fetchData}
+        />
+      )}
+
+      {/* Row action dropdown — portaled so it escapes the table's overflow:hidden. */}
+      {openMenuUid && menuPosition && (() => {
+        const menuUser = users.find(u => u.uid === openMenuUid);
+        if (!menuUser || menuUser.status === 'deactivated') return null;
+        const canDeactivate = menuUser.uid !== currentUser?.uid;
+        return createPortal(
+          <div
+            data-row-menu
+            role="menu"
+            style={{ position: 'fixed', top: menuPosition.top, right: menuPosition.right }}
+            className="z-50 min-w-[160px] bg-white border border-gray-200 rounded-md shadow-lg py-1 animate-in fade-in zoom-in-95 duration-100"
+          >
+            <button
+              role="menuitem"
+              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              onClick={() => { setEditingUser(menuUser); closeRowMenu(); }}
+            >
+              <Pencil className="h-3.5 w-3.5 text-gray-500" />
+              Edit
+            </button>
+            <button
+              role="menuitem"
+              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              onClick={() => { setEnrollModalUserId(menuUser.uid); closeRowMenu(); }}
+            >
+              <PlusCircle className="h-3.5 w-3.5 text-gray-500" />
+              Enroll
+            </button>
+            {canDeactivate && (
+              <>
+                <div className="my-1 border-t border-gray-100" />
+                <button
+                  role="menuitem"
+                  className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                  onClick={() => { setDeactivatingUser(menuUser); closeRowMenu(); }}
+                >
+                  <UserX className="h-3.5 w-3.5" />
+                  Deactivate
+                </button>
+              </>
+            )}
+          </div>,
+          document.body
+        );
+      })()}
 
       {deactivatingUser && (
         <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -789,43 +1208,28 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onNavigate }) =>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex justify-end gap-2">
                         {user.status === 'deactivated' ? (
                           <Button
                             variant="outline"
                             size="sm"
-                            className="gap-1.5"
+                            className="gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => setReactivatingUser(user)}
                           >
                             <UserCheck className="h-3.5 w-3.5" />
                             Reactivate
                           </Button>
                         ) : (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="gap-1.5"
-                              onClick={() => setEnrollModalUserId(user.uid)}
-                            >
-                              <PlusCircle className="h-3.5 w-3.5" />
-                              Enroll
-                            </Button>
-                            {user.uid !== currentUser?.uid && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                                onClick={() => setDeactivatingUser(user)}
-                              >
-                                <UserX className="h-3.5 w-3.5" />
-                                Deactivate
-                              </Button>
-                            )}
-                            <button className="p-1 hover:bg-gray-100 rounded">
-                              <MoreVertical className="h-4 w-4 text-gray-400" />
-                            </button>
-                          </>
+                          <button
+                            data-row-menu
+                            className="p-1 hover:bg-gray-100 rounded"
+                            aria-label="Open actions menu"
+                            aria-haspopup="menu"
+                            aria-expanded={openMenuUid === user.uid}
+                            onClick={(e) => toggleRowMenu(user.uid, e.currentTarget)}
+                          >
+                            <MoreVertical className="h-4 w-4 text-gray-400" />
+                          </button>
                         )}
                       </div>
                     </td>

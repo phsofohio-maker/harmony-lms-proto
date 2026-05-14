@@ -541,6 +541,8 @@ export const CoursePlayer: React.FC<CoursePlayerProps> = ({
         // Fix 3.3: Check if this was the last module — show course completion receipt
         if (allPassed && isLastModule) {
           pollForCourseGrade();
+        } else if (allPassed && nextModule) {
+          setTimeout(() => handleNavigateToModule(nextModule.id), 1200);
         }
       }
 
