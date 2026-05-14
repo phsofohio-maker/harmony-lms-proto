@@ -135,3 +135,89 @@
   background-color: #E1F5EE;            /* primary-50 */
   border-radius: 2px;
 }
+
+/* ============================================
+   Tables (Guide 12 Patch)
+   ============================================ */
+
+.tiptap-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.75rem 0;
+  font-size: 0.875rem;
+  table-layout: auto;
+  overflow: visible;
+}
+
+.tiptap-content th,
+.tiptap-content td {
+  border: 1px solid #D1D5DB;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  min-width: 80px;
+  position: relative;
+}
+
+.tiptap-content th {
+  background-color: #F3F4F6;
+  font-weight: 600;
+  color: #111827;
+}
+
+.tiptap-content tr:nth-child(even) td {
+  background-color: #F9FAFB;
+}
+
+/* Rich text inside table cells */
+.tiptap-content td p,
+.tiptap-content th p {
+  margin-bottom: 0.25rem;
+}
+.tiptap-content td p:last-child,
+.tiptap-content th p:last-child {
+  margin-bottom: 0;
+}
+
+/* Lists inside cells — tighter spacing */
+.tiptap-content td ul,
+.tiptap-content td ol,
+.tiptap-content th ul,
+.tiptap-content th ol {
+  margin-bottom: 0.25rem;
+  padding-left: 1.25rem;
+}
+
+/* Column resize handle (editor mode only) */
+.tiptap-content .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: #0F7B4F;
+  cursor: col-resize;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+/* Selected cell highlight (editor mode only) */
+.tiptap-content .selectedCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(220, 247, 233, 0.4);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Table wrapper for horizontal scroll on small viewports */
+.tiptap-content .tableWrapper {
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+
+/* Ensure resize cursor shows on table edge */
+.tiptap-content table .resize-cursor {
+  cursor: col-resize;
+}

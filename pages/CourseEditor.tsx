@@ -168,7 +168,10 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
     setIsSaving(true);
     try {
       const availability = (editOpensAt || editClosesAt)
-        ? { opensAt: editOpensAt || undefined, closesAt: editClosesAt || undefined }
+        ? {
+            ...(editOpensAt ? { opensAt: editOpensAt } : {}),
+            ...(editClosesAt ? { closesAt: editClosesAt } : {}),
+          }
         : undefined;
       // Extract Google Doc ID from URL
       const certDocIdMatch = editCertTemplateUrl.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
@@ -181,7 +184,7 @@ export const CourseEditor: React.FC<CourseEditorProps> = ({
           category: editCategory,
           ceCredits: editCredits,
           thumbnailUrl: editThumbnail,
-          availability,
+          ...(availability !== undefined ? { availability } : {}),
           ...(certificateTemplateDocId !== undefined ? { certificateTemplateDocId } : {}),
         },
         user.uid,

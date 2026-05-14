@@ -14,6 +14,13 @@ export interface User {
   licenseNumber?: string;
   licenseExpiry?: string;
   requiresPasswordChange?: boolean;
+  // Soft-delete lifecycle (Guide 15). Missing `status` is treated as 'active'
+  // — no backfill is required for legacy user documents.
+  status?: "active" | "deactivated";
+  deactivatedAt?: string;
+  deactivatedBy?: string;
+  reactivatedAt?: string;
+  reactivatedBy?: string;
 }
 
 // ============================================
@@ -294,7 +301,9 @@ export type AuditActionType =
   | "POLICY_SIGNED"
   | "POLICY_REMINDER_SENT"
   | "ACCOUNT_DIRECT_CREATE"
-  | "PASSWORD_CHANGE_FORCED";
+  | "PASSWORD_CHANGE_FORCED"
+  | "USER_DEACTIVATE"
+  | "USER_REACTIVATE";
 
 export interface AuditLog {
   id: string;

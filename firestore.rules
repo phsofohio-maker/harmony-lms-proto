@@ -106,12 +106,20 @@ service cloud.firestore {
       
       match /modules/{moduleId} {
         allow read: if isAuthenticated() && (
-          get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published' 
+          get(/databases/$(database)/documents/courses/$(courseId)).data.status == 'published'
           || canAuthorContent()
         );
-        allow create: if canAuthorContent() && 
+        allow create: if canAuthorContent() &&
           hasRequiredFields(['title', 'courseId', 'weight']);
-        allow update: if canAuthorContent();
+        // Authors may update everything EXCEPT flipping status to "published".
+        // Only the validateAndPublishModule Cloud Function (Admin SDK, bypasses
+        // rules) may set status to "published" — that path also writes
+        // publishedAt and publishedBy. Authors can still unpublish ("draft" or
+        // "archived"). Guide 14 — fail-closed publish gate.
+        allow update: if canAuthorContent() && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])
+          || request.resource.data.status != 'published'
+        );
         allow delete: if isAdmin();
         
         match /blocks/{blockId} {
@@ -123,6 +131,17 @@ service cloud.firestore {
       }
     }
     
+    // ============================================
+    // MODULE VALIDATION REPORTS (Guide 14)
+    // ============================================
+    // One report per module, overwritten by each Cloud Function run.
+    // Authors can read for the live validation panel; only the
+    // validateAndPublishModule Cloud Function writes (Admin SDK).
+    match /moduleValidationReports/{moduleId} {
+      allow read: if canAuthorContent();
+      allow write: if false;
+    }
+
     // ============================================
     // GLOSSARY TERMS (per-course clinical term definitions)
     // ============================================

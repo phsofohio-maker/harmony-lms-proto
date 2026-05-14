@@ -8,8 +8,9 @@
  */
 import React, { useState } from 'react';
 import { Course, CourseCategory, Module } from '../functions/src/types';
-import { Settings, FileEdit, Trash2, Plus, Search, Layers, AlertCircle, Globe, Lock, Loader2, RefreshCw, X, Scale, AlertTriangle, Save } from 'lucide-react';
+import { Settings, FileEdit, Trash2, Plus, Search, Layers, AlertCircle, Globe, Lock, Loader2, RefreshCw, X, Scale, AlertTriangle, Save, Download } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { ExportCourseDialog } from '../components/ui/ExportCourseDialog';
 import { RichTextEditorMini } from '../components/ui/RichTextEditorMini';
 import { cn, generateId } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,13 +35,16 @@ interface CourseManagerProps {
 }
 
 export const CourseManager: React.FC<CourseManagerProps> = ({ onNavigate }) => {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const { addToast } = useToast();
   const { courses, moduleCounts, isLoading, error, refetch } = useCourses();
   const [filter, setFilter] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [exportingCourse, setExportingCourse] = useState<Course | null>(null);
+
+  const canExport = hasRole(['admin', 'instructor', 'content_author']);
 
   // Weights modal state
   const [weightsCourseId, setWeightsCourseId] = useState<string | null>(null);
@@ -544,6 +548,17 @@ export const CourseManager: React.FC<CourseManagerProps> = ({ onNavigate }) => {
                         <Scale className="h-3.5 w-3.5" />
                         Weights
                       </Button>
+                      {canExport && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setExportingCourse(course)}
+                          className="gap-1.5"
+                        >
+                          <Download className="h-3.5 w-3.5" strokeWidth={1.75} />
+                          Export
+                        </Button>
+                      )}
                       <button
                         onClick={() => setConfirmDeleteId(course.id)}
                         className="p-2 text-gray-400 hover:text-red-600"
@@ -558,6 +573,12 @@ export const CourseManager: React.FC<CourseManagerProps> = ({ onNavigate }) => {
           </tbody>
         </table>
       </div>
+
+      {/* Export Course Dialog */}
+      <ExportCourseDialog
+        course={exportingCourse}
+        onClose={() => setExportingCourse(null)}
+      />
     </div>
   );
 };

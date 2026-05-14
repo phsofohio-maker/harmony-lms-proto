@@ -7,12 +7,16 @@
  * @module pages/ModuleBuilder
  */
 
-import React, { useState } from 'react';
-import { BlockType } from '../functions/src/types';
+import React, { useEffect, useState } from 'react';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { BlockType, Course } from '../functions/src/types';
 import { useModule } from '../hooks/useModule';
 import { Button } from '../components/ui/Button';
 import { RichTextEditorMini } from '../components/ui/RichTextEditorMini';
 import { BlockEditor } from '../components/builder/BlockEditor';
+import { ValidationPanel } from '../components/ui/ValidationPanel';
+import { PublishBlockedModal } from '../components/ui/PublishBlockedModal';
+import { PublishAdvisoryDialog } from '../components/ui/PublishAdvisoryDialog';
 import {
   Plus,
   Save,
@@ -23,9 +27,18 @@ import {
   AlertTriangle,
   AlertCircle,
   FileText,
+  UploadCloud,
 } from 'lucide-react';
 import { cn } from '../utils';
 import { useToast } from '../hooks/useToast';
+import { getCourse } from '../services/courseService';
+import { getTermsForCourse, type GlossaryTerm } from '../services/glossaryService';
+import { auditService } from '../services/auditService';
+import {
+  runValidation,
+  type ValidationIssue,
+  type ValidationReport,
+} from '../services/moduleValidation';
 
 interface ModuleBuilderProps {
   courseId: string;
@@ -54,9 +67,131 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
     reorderBlocks,
     updateModuleMetadata,
     save,
+    refetch,
   } = useModule({ courseId, moduleId });
 
   const { addToast } = useToast();
+
+  // ---- Validation / publish state (Guide 14) ----
+  const [course, setCourse] = useState<Course | null>(null);
+  const [glossaryTerms, setGlossaryTerms] = useState<GlossaryTerm[]>([]);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [advisoryDialog, setAdvisoryDialog] = useState<ValidationIssue[] | null>(null);
+  const [blockedReport, setBlockedReport] = useState<ValidationReport | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [c, terms] = await Promise.all([
+          getCourse(courseId),
+          getTermsForCourse(courseId).catch(() => [] as GlossaryTerm[]),
+        ]);
+        if (cancelled) return;
+        setCourse(c);
+        setGlossaryTerms(terms);
+      } catch (err) {
+        console.error('Failed to load course or glossary for validation panel', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId]);
+
+  const handleIssueClick = (issue: ValidationIssue) => {
+    const target = issue.location.blockId
+      ? document.querySelector(`[data-block-id="${issue.location.blockId}"]`)
+      : null;
+    if (target instanceof HTMLElement) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.add('ring-2', 'ring-red-400');
+      window.setTimeout(() => target.classList.remove('ring-2', 'ring-red-400'), 1600);
+    }
+  };
+
+  const callPublishGate = async (acknowledgedAdvisory: boolean) => {
+    if (!module || !moduleId) {
+      addToast({
+        type: 'error',
+        title: 'Cannot publish unsaved module',
+        message: 'Save the module before publishing.',
+      });
+      return;
+    }
+    setIsPublishing(true);
+    try {
+      const fn = httpsCallable<
+        { moduleId: string; courseId: string; advisoryOverrideAck?: boolean },
+        { success: boolean; report: ValidationReport; reason?: string }
+      >(getFunctions(), 'validateAndPublishModule');
+      const result = await fn({
+        moduleId,
+        courseId,
+        advisoryOverrideAck: acknowledgedAdvisory,
+      });
+      const data = result.data;
+      if (data.success) {
+        addToast({
+          type: 'success',
+          title: 'Module published',
+          message:
+            data.report.summary.advisory > 0
+              ? `Published with ${data.report.summary.advisory} advisory warning(s).`
+              : undefined,
+        });
+        await refetch();
+      } else {
+        setBlockedReport(data.report);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      addToast({ type: 'error', title: 'Publish failed', message: msg });
+    } finally {
+      setIsPublishing(false);
+      setAdvisoryDialog(null);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!module || !course) return;
+    if (isDirty) {
+      addToast({
+        type: 'error',
+        title: 'Save before publishing',
+        message: 'You have unsaved changes. Save the module first, then publish.',
+      });
+      return;
+    }
+    // Local pre-flight: if blocking issues, short-circuit straight to the
+    // blocked modal without round-tripping the Cloud Function. The function
+    // is still the authoritative gate; this just saves a network round-trip.
+    const local = runValidation(module, { course, glossaryTerms });
+    if (local.summary.blocking > 0) {
+      setBlockedReport(local);
+      return;
+    }
+    if (local.summary.advisory > 0) {
+      setAdvisoryDialog(local.issues.filter(i => i.severity === 'ADVISORY'));
+      // Audit the override intent client-side (CF also logs server-side).
+      await auditService.logToFirestore(
+        userUid,
+        userName ?? 'unknown',
+        'MODULE_VALIDATION_ADVISORY_OVERRIDE',
+        module.id,
+        `Author opened advisory-override dialog for module ${module.id}`,
+        {
+          courseId,
+          advisoryCount: local.summary.advisory,
+          issues: local.issues
+            .filter(i => i.severity === 'ADVISORY')
+            .map(i => i.checkId),
+        }
+      );
+      return;
+    }
+    await callPublishGate(false);
+  };
 
   // Guard against losing unsaved changes on back navigation
   const handleBack = () => {
@@ -168,6 +303,26 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
                 <Save className="h-4 w-4 mr-2" />
                 {isSaving ? 'Saving...' : 'Save'}
               </Button>
+
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handlePublish}
+                disabled={!moduleId || isPublishing || isDirty || !course}
+                isLoading={isPublishing}
+                title={
+                  !moduleId
+                    ? 'Save the module first to enable publish'
+                    : isDirty
+                    ? 'Save the module before publishing'
+                    : module?.status === 'published'
+                    ? 'Re-validate and re-publish this module'
+                    : 'Validate and publish this module'
+                }
+              >
+                <UploadCloud className="h-4 w-4 mr-2" strokeWidth={1.75} />
+                {module?.status === 'published' ? 'Re-publish' : 'Publish'}
+              </Button>
             </div>
           </div>
         </div>
@@ -175,6 +330,16 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-6 py-8">
+        {/* Validation Panel (Guide 14) */}
+        <div className="mb-8">
+          <ValidationPanel
+            module={module}
+            course={course}
+            glossaryTerms={glossaryTerms}
+            onIssueClick={handleIssueClick}
+          />
+        </div>
+
         {/* Module Metadata */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8 shadow-sm">
           <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">
@@ -307,19 +472,24 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
             </div>
           ) : (
             module.blocks.map((block, index) => (
-              <BlockEditor
+              <div
                 key={block.id}
-                block={block}
-                onChange={updateBlock}
-                onDelete={deleteBlock}
-                onMoveUp={() => reorderBlocks(index, index - 1)}
-                onMoveDown={() => reorderBlocks(index, index + 1)}
-                isFirst={index === 0}
-                isLast={index === module.blocks.length - 1}
-                courseId={courseId}
-                actorId={userUid}
-                actorName={userName}
-              />
+                data-block-id={block.id}
+                className="rounded-lg transition-shadow"
+              >
+                <BlockEditor
+                  block={block}
+                  onChange={updateBlock}
+                  onDelete={deleteBlock}
+                  onMoveUp={() => reorderBlocks(index, index - 1)}
+                  onMoveDown={() => reorderBlocks(index, index + 1)}
+                  isFirst={index === 0}
+                  isLast={index === module.blocks.length - 1}
+                  courseId={courseId}
+                  actorId={userUid}
+                  actorName={userName}
+                />
+              </div>
             ))
           )}
         </div>
@@ -369,6 +539,25 @@ export const ModuleBuilder: React.FC<ModuleBuilderProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Publish Blocked Modal */}
+        {blockedReport && (
+          <PublishBlockedModal
+            report={blockedReport}
+            onClose={() => setBlockedReport(null)}
+            onJumpToIssue={handleIssueClick}
+          />
+        )}
+
+        {/* Publish Advisory Dialog */}
+        {advisoryDialog && (
+          <PublishAdvisoryDialog
+            advisoryIssues={advisoryDialog}
+            onCancel={() => setAdvisoryDialog(null)}
+            onPublishAnyway={() => callPublishGate(true)}
+            isPublishing={isPublishing}
+          />
+        )}
 
         {/* Unsaved Changes Warning */}
         {isDirty && (

@@ -1189,3 +1189,173 @@ export const generateCertificate = onCall(
     }
   }
 );
+
+// ============================================
+// FUNCTION: Deactivate / Reactivate Staff (Guide 15)
+// ============================================
+
+/**
+ * Admin-only soft-delete for a staff account. Disables Firebase Auth (which
+ * blocks login immediately and revokes tokens on next refresh) and flags the
+ * Firestore profile with deactivation metadata. All historical records —
+ * enrollments, grades, certificates, policy signatures, audit log entries —
+ * remain intact under the same UID.
+ *
+ * Guards:
+ *  - Caller must be authenticated and have role=admin in custom claims.
+ *  - Cannot self-deactivate.
+ *  - Cannot deactivate the last active admin.
+ *  - Cannot deactivate a user that is already deactivated.
+ */
+export const deactivateUser = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Authentication required.");
+  }
+  if (request.auth.token.role !== "admin") {
+    throw new HttpsError("permission-denied", "Only admins can deactivate accounts.");
+  }
+
+  const { targetUid } = request.data || {};
+  if (!targetUid || typeof targetUid !== "string") {
+    throw new HttpsError("invalid-argument", "targetUid is required.");
+  }
+
+  if (targetUid === request.auth.uid) {
+    throw new HttpsError(
+      "failed-precondition",
+      "You cannot deactivate your own account."
+    );
+  }
+
+  // Last-admin protection — count admins that will still be active after this op.
+  const adminsSnapshot = await db.collection("users").where("role", "==", "admin").get();
+  const remainingActiveAdmins = adminsSnapshot.docs.filter((doc) => {
+    const data = doc.data();
+    return data.status !== "deactivated" && doc.id !== targetUid;
+  });
+  if (remainingActiveAdmins.length === 0) {
+    throw new HttpsError(
+      "failed-precondition",
+      "Cannot deactivate the last active admin. Promote another user to admin first."
+    );
+  }
+
+  const targetRef = db.collection("users").doc(targetUid);
+  const targetProfile = await targetRef.get();
+  if (!targetProfile.exists) {
+    throw new HttpsError("not-found", "User not found.");
+  }
+  const targetData = targetProfile.data() || {};
+  if (targetData.status === "deactivated") {
+    throw new HttpsError("failed-precondition", "User is already deactivated.");
+  }
+
+  try {
+    // Disable Auth first — if this fails, Firestore is never touched.
+    await admin.auth().updateUser(targetUid, { disabled: true });
+
+    await targetRef.update(
+      stripUndefined({
+        status: "deactivated",
+        deactivatedAt: admin.firestore.Timestamp.now(),
+        deactivatedBy: request.auth.uid,
+        updatedAt: admin.firestore.Timestamp.now(),
+      })
+    );
+
+    await createAuditLog(
+      request.auth.uid,
+      request.auth.token.name || "Admin",
+      "USER_DEACTIVATE",
+      targetUid,
+      `Deactivated account for ${targetData.displayName || targetUid} (${targetData.email || "unknown email"})`,
+      {
+        targetEmail: targetData.email,
+        targetRole: targetData.role,
+        targetName: targetData.displayName,
+      }
+    );
+
+    logger.info("User deactivated", { targetUid, actor: request.auth.uid });
+    return { success: true, uid: targetUid };
+  } catch (error: any) {
+    if (error.code && typeof error.code === "string" && error.code.startsWith("functions/")) {
+      throw error;
+    }
+    logger.error("Failed to deactivate user:", error);
+    throw new HttpsError("internal", "Failed to deactivate user account.");
+  }
+});
+
+/**
+ * Admin-only reactivation. Re-enables the Firebase Auth account (the user can
+ * log in again with their existing credentials) and restores active status on
+ * the Firestore profile.
+ */
+export const reactivateUser = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Authentication required.");
+  }
+  if (request.auth.token.role !== "admin") {
+    throw new HttpsError("permission-denied", "Only admins can reactivate accounts.");
+  }
+
+  const { targetUid } = request.data || {};
+  if (!targetUid || typeof targetUid !== "string") {
+    throw new HttpsError("invalid-argument", "targetUid is required.");
+  }
+
+  const targetRef = db.collection("users").doc(targetUid);
+  const targetProfile = await targetRef.get();
+  if (!targetProfile.exists) {
+    throw new HttpsError("not-found", "User not found.");
+  }
+  const targetData = targetProfile.data() || {};
+  if (targetData.status !== "deactivated") {
+    throw new HttpsError("failed-precondition", "User is not deactivated.");
+  }
+
+  try {
+    await admin.auth().updateUser(targetUid, { disabled: false });
+
+    await targetRef.update(
+      stripUndefined({
+        status: "active",
+        reactivatedAt: admin.firestore.Timestamp.now(),
+        reactivatedBy: request.auth.uid,
+        updatedAt: admin.firestore.Timestamp.now(),
+      })
+    );
+
+    await createAuditLog(
+      request.auth.uid,
+      request.auth.token.name || "Admin",
+      "USER_REACTIVATE",
+      targetUid,
+      `Reactivated account for ${targetData.displayName || targetUid} (${targetData.email || "unknown email"})`,
+      {
+        targetEmail: targetData.email,
+        targetRole: targetData.role,
+        targetName: targetData.displayName,
+        previousDeactivatedAt:
+          targetData.deactivatedAt && typeof targetData.deactivatedAt.toDate === "function" ?
+            targetData.deactivatedAt.toDate().toISOString() :
+            null,
+      }
+    );
+
+    logger.info("User reactivated", { targetUid, actor: request.auth.uid });
+    return { success: true, uid: targetUid };
+  } catch (error: any) {
+    if (error.code && typeof error.code === "string" && error.code.startsWith("functions/")) {
+      throw error;
+    }
+    logger.error("Failed to reactivate user:", error);
+    throw new HttpsError("internal", "Failed to reactivate user account.");
+  }
+});
+
+// ============================================
+// MODULE CONTENT VALIDATION (Guide 14)
+// ============================================
+export { validateAndPublishModule } from "./validateAndPublishModule";

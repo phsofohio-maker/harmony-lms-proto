@@ -9,7 +9,7 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, Enrollment, Course, UserRoleType } from '../functions/src/types';
-import { Users, Search, MoreVertical, ShieldCheck, Mail, PlusCircle, Book, Loader2, RefreshCw, AlertCircle, UserPlus, KeyRound, Copy, RefreshCcw, Check, X } from 'lucide-react';
+import { Users, Search, MoreVertical, ShieldCheck, Mail, PlusCircle, Book, Loader2, RefreshCw, AlertCircle, UserPlus, KeyRound, Copy, RefreshCcw, Check, X, UserX, UserCheck, ShieldOff, FileText, RotateCcw } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { cn } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,6 +19,7 @@ import { createEnrollment, getUserEnrollments } from '../services/enrollmentServ
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { deactivateStaff, reactivateStaff } from '../services/userManagementService';
 
 const TEMP_PW_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
 const generateTempPassword = (): string => {
@@ -283,6 +284,14 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onNavigate }) =>
   const [searchFilter, setSearchFilter] = useState('');
   const [showCreateAccount, setShowCreateAccount] = useState(false);
 
+  // Active / inactive tab + deactivation/reactivation modal state (Guide 15).
+  const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
+  const [deactivatingUser, setDeactivatingUser] = useState<User | null>(null);
+  const [isDeactivating, setIsDeactivating] = useState(false);
+  const [deactivateConfirmText, setDeactivateConfirmText] = useState('');
+  const [reactivatingUser, setReactivatingUser] = useState<User | null>(null);
+  const [isReactivating, setIsReactivating] = useState(false);
+
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -301,6 +310,9 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onNavigate }) =>
         jobTitle: doc.data().jobTitle,
         licenseNumber: doc.data().licenseNumber,
         licenseExpiry: doc.data().licenseExpiry,
+        status: doc.data().status || 'active',
+        deactivatedAt: doc.data().deactivatedAt?.toDate?.()?.toISOString(),
+        deactivatedBy: doc.data().deactivatedBy,
       }));
       setUsers(fetchedUsers);
 
@@ -356,6 +368,53 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onNavigate }) =>
     (u.department || '').toLowerCase().includes(searchFilter.toLowerCase())
   );
 
+  // Tab split — undefined `status` is treated as 'active' for backward compat.
+  const activeUsers = filteredUsers.filter(u => u.status !== 'deactivated');
+  const inactiveUsers = filteredUsers.filter(u => u.status === 'deactivated');
+  const displayedUsers = activeTab === 'active' ? activeUsers : inactiveUsers;
+
+  const handleDeactivate = async () => {
+    if (!deactivatingUser || isDeactivating) return;
+    setIsDeactivating(true);
+    try {
+      await deactivateStaff(deactivatingUser.uid);
+      addToast({
+        type: 'success',
+        title: `${deactivatingUser.displayName} deactivated`,
+        message: 'Account access has been revoked. All records preserved.',
+      });
+      setDeactivatingUser(null);
+      setDeactivateConfirmText('');
+      await fetchData();
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to deactivate account.';
+      addToast({ type: 'error', title: 'Deactivation failed', message: msg });
+    } finally {
+      setIsDeactivating(false);
+    }
+  };
+
+  const handleReactivate = async () => {
+    if (!reactivatingUser || isReactivating) return;
+    setIsReactivating(true);
+    try {
+      await reactivateStaff(reactivatingUser.uid);
+      addToast({
+        type: 'success',
+        title: `${reactivatingUser.displayName} reactivated`,
+        message: 'Account access has been restored.',
+      });
+      setReactivatingUser(null);
+      setActiveTab('active');
+      await fetchData();
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to reactivate account.';
+      addToast({ type: 'error', title: 'Reactivation failed', message: msg });
+    } finally {
+      setIsReactivating(false);
+    }
+  };
+
   const renderEnrollModal = (userId: string) => {
     const targetUser = users.find(u => u.uid === userId);
     const userEnrollmentIds = enrollments.filter(e => e.userId === userId).map(e => e.courseId);
@@ -408,6 +467,127 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onNavigate }) =>
         />
       )}
 
+      {deactivatingUser && (
+        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 animate-in zoom-in duration-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                <UserX className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Deactivate Account</h3>
+                <p className="text-sm text-gray-500">{deactivatingUser.displayName}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <p className="text-sm text-gray-700">This will immediately:</p>
+              <ul className="text-sm text-gray-600 space-y-1.5 ml-4">
+                <li className="flex items-start gap-2">
+                  <ShieldOff className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
+                  Block this person from logging in
+                </li>
+                <li className="flex items-start gap-2">
+                  <FileText className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                  Preserve all training records, grades, and certificates
+                </li>
+                <li className="flex items-start gap-2">
+                  <RotateCcw className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
+                  This action can be reversed by an admin
+                </li>
+              </ul>
+
+              <div className="mt-4">
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Type "{deactivatingUser.displayName}" to confirm
+                </label>
+                <input
+                  type="text"
+                  value={deactivateConfirmText}
+                  onChange={(e) => setDeactivateConfirmText(e.target.value)}
+                  disabled={isDeactivating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
+                  placeholder={deactivatingUser.displayName}
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setDeactivatingUser(null);
+                  setDeactivateConfirmText('');
+                }}
+                disabled={isDeactivating}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                disabled={
+                  deactivateConfirmText !== deactivatingUser.displayName ||
+                  isDeactivating
+                }
+                onClick={handleDeactivate}
+              >
+                {isDeactivating ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Deactivating...</>
+                ) : (
+                  'Deactivate Account'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reactivatingUser && (
+        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 animate-in zoom-in duration-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                <UserCheck className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Reactivate Account</h3>
+                <p className="text-sm text-gray-500">{reactivatingUser.displayName}</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-700 mb-6">
+              This will restore login access for {reactivatingUser.displayName}.
+              Their previous enrollments, grades, and certificates remain intact,
+              and they can log in with their existing credentials.
+            </p>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setReactivatingUser(null)}
+                disabled={isReactivating}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                disabled={isReactivating}
+                onClick={handleReactivate}
+              >
+                {isReactivating ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Reactivating...</>
+                ) : (
+                  'Reactivate Account'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-end mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -454,6 +634,39 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onNavigate }) =>
           </div>
         </div>
 
+        <div className="flex gap-6 px-6 border-b border-gray-200 bg-white">
+          <button
+            onClick={() => setActiveTab('active')}
+            className={cn(
+              'py-3 text-sm font-semibold border-b-2 transition-colors flex items-center',
+              activeTab === 'active'
+                ? 'border-primary-600 text-primary-700'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            )}
+          >
+            Active Staff
+            <span className="ml-2 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
+              {activeUsers.length}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('inactive')}
+            className={cn(
+              'py-3 text-sm font-semibold border-b-2 transition-colors flex items-center',
+              activeTab === 'inactive'
+                ? 'border-primary-600 text-primary-700'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            )}
+          >
+            Inactive
+            {inactiveUsers.length > 0 && (
+              <span className="ml-2 px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700">
+                {inactiveUsers.length}
+              </span>
+            )}
+          </button>
+        </div>
+
         <table className="w-full text-left text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -473,14 +686,18 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onNavigate }) =>
                   Loading staff directory...
                 </td>
               </tr>
-            ) : filteredUsers.length === 0 ? (
+            ) : displayedUsers.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic">
-                  {searchFilter ? 'No staff members match your search.' : 'No users found in the system.'}
+                  {searchFilter
+                    ? 'No staff members match your search.'
+                    : activeTab === 'active'
+                      ? 'No active staff in the system.'
+                      : 'No deactivated staff.'}
                 </td>
               </tr>
             ) : (
-              filteredUsers.map(user => {
+              displayedUsers.map(user => {
                 const userEnrollments = enrollments.filter(e => e.userId === user.uid);
                 const compliance = user.role === 'admin' ? 100 : userEnrollments.length > 0
                   ? (userEnrollments.filter(e => e.status === 'completed').length / userEnrollments.length) * 100
@@ -490,11 +707,21 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onNavigate }) =>
                   <tr key={user.uid} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold">
+                        <div className={cn(
+                          'h-10 w-10 rounded-full flex items-center justify-center font-bold',
+                          user.status === 'deactivated' ? 'bg-gray-100 text-gray-400' : 'bg-primary-100 text-primary-700'
+                        )}>
                           {user.displayName.charAt(0)}
                         </div>
                         <div>
-                          <div className="font-bold text-gray-900">{user.displayName}</div>
+                          <div className="font-bold text-gray-900 flex items-center">
+                            {user.displayName}
+                            {user.status === 'deactivated' && (
+                              <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-500">
+                                Inactive
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-gray-500 flex items-center gap-1">
                             <Mail className="h-3 w-3" />
                             {user.email}
@@ -563,18 +790,43 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onNavigate }) =>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-1.5"
-                          onClick={() => setEnrollModalUserId(user.uid)}
-                        >
-                          <PlusCircle className="h-3.5 w-3.5" />
-                          Enroll
-                        </Button>
-                        <button className="p-1 hover:bg-gray-100 rounded">
-                          <MoreVertical className="h-4 w-4 text-gray-400" />
-                        </button>
+                        {user.status === 'deactivated' ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5"
+                            onClick={() => setReactivatingUser(user)}
+                          >
+                            <UserCheck className="h-3.5 w-3.5" />
+                            Reactivate
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1.5"
+                              onClick={() => setEnrollModalUserId(user.uid)}
+                            >
+                              <PlusCircle className="h-3.5 w-3.5" />
+                              Enroll
+                            </Button>
+                            {user.uid !== currentUser?.uid && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                onClick={() => setDeactivatingUser(user)}
+                              >
+                                <UserX className="h-3.5 w-3.5" />
+                                Deactivate
+                              </Button>
+                            )}
+                            <button className="p-1 hover:bg-gray-100 rounded">
+                              <MoreVertical className="h-4 w-4 text-gray-400" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

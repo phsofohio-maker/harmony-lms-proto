@@ -21,12 +21,17 @@
     "unseed": "npx tsx --tsconfig scripts/seed/tsconfig.json scripts/seed/unseed.ts",
     "unseed:full": "npx tsx --tsconfig scripts/seed/tsconfig.json scripts/seed/unseed.ts --full",
     "reseed": "npm run unseed:full && npm run seed",
-    "cleanup:deploy": "npx tsx --tsconfig scripts/seed/tsconfig.json scripts/seed/deploymentCleanup.ts"
+    "cleanup:deploy": "npx tsx --tsconfig scripts/seed/tsconfig.json scripts/seed/deploymentCleanup.ts",
+    "audit:modules": "npx tsx --tsconfig scripts/seed/tsconfig.json scripts/auditExistingModules.ts"
   },
   "dependencies": {
     "@tiptap/extension-highlight": "^3.20.5",
     "@tiptap/extension-link": "^3.20.5",
     "@tiptap/extension-placeholder": "^3.20.5",
+    "@tiptap/extension-table": "^3.23.4",
+    "@tiptap/extension-table-cell": "^3.23.4",
+    "@tiptap/extension-table-header": "^3.23.4",
+    "@tiptap/extension-table-row": "^3.23.4",
     "@tiptap/extension-typography": "^3.20.5",
     "@tiptap/extension-underline": "^3.20.5",
     "@tiptap/pm": "^3.20.5",

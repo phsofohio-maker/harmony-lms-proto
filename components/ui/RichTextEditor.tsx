@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
@@ -7,13 +7,19 @@ import Highlight from '@tiptap/extension-highlight';
 import Link from '@tiptap/extension-link';
 import Typography from '@tiptap/extension-typography';
 import Placeholder from '@tiptap/extension-placeholder';
+import { Table } from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
   Heading2, Heading3, List, ListOrdered, Link as LinkIcon,
   Highlighter, Undo2, Redo2, BookOpen, X,
+  Table2, Plus, Minus, Trash2, ToggleLeft,
 } from 'lucide-react';
 import { cn } from '../../utils';
 import { ClinicalTerm } from './ClinicalTermExtension';
+import { TableGridPicker } from './TableGridPicker';
 import {
   createTerm as createGlossaryTerm,
   updateTerm as updateGlossaryTerm,
@@ -74,6 +80,32 @@ function Separator() {
   return <div className="w-px h-5 bg-gray-200 mx-1" />;
 }
 
+function TableMenuButton({
+  onClick,
+  icon,
+  label,
+  className,
+}: {
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'flex items-center gap-2 w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors',
+        className
+      )}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   content,
   onChange,
@@ -89,6 +121,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [highlightOpen, setHighlightOpen] = useState(false);
   const highlightRef = useRef<HTMLDivElement>(null);
   const [showTermModal, setShowTermModal] = useState(false);
+  const [showTablePicker, setShowTablePicker] = useState(false);
+  const [showTableMenu, setShowTableMenu] = useState(false);
+  const tableMenuRef = useRef<HTMLDivElement>(null);
 
   const termsEnabled = Boolean(courseId && actorId);
 
@@ -112,6 +147,13 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         placeholder: ({ node }) =>
           node.type.name === 'heading' ? 'Heading...' : placeholder,
       }),
+      Table.configure({
+        resizable: true,
+        HTMLAttributes: { class: 'clinical-table' },
+      }),
+      TableRow,
+      TableCell,
+      TableHeader,
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -146,6 +188,32 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       return () => document.removeEventListener('mousedown', handleClick);
     }
   }, [highlightOpen]);
+
+  // Close table operations menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (tableMenuRef.current && !tableMenuRef.current.contains(e.target as Node)) {
+        setShowTableMenu(false);
+      }
+    };
+    if (showTableMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showTableMenu]);
+
+  const handleInsertTable = useCallback(
+    (rows: number, cols: number) => {
+      if (!editor) return;
+      editor
+        .chain()
+        .focus()
+        .insertTable({ rows, cols, withHeaderRow: true })
+        .run();
+      setShowTablePicker(false);
+    },
+    [editor]
+  );
 
   if (!editor) return null;
 
@@ -281,6 +349,85 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 />
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Table group */}
+        <Separator />
+        <div className="relative" ref={tableMenuRef}>
+          {editor.isActive('table') ? (
+            <>
+              <ToolbarButton
+                onClick={() => setShowTableMenu(!showTableMenu)}
+                active={true}
+                title="Table options"
+              >
+                <Table2 className="h-4 w-4" strokeWidth={1.75} />
+              </ToolbarButton>
+              {showTableMenu && (
+                <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[180px]">
+                  <TableMenuButton
+                    onClick={() => { editor.chain().focus().addRowBefore().run(); setShowTableMenu(false); }}
+                    icon={<Plus className="h-3.5 w-3.5" strokeWidth={1.75} />}
+                    label="Add row above"
+                  />
+                  <TableMenuButton
+                    onClick={() => { editor.chain().focus().addRowAfter().run(); setShowTableMenu(false); }}
+                    icon={<Plus className="h-3.5 w-3.5" strokeWidth={1.75} />}
+                    label="Add row below"
+                  />
+                  <TableMenuButton
+                    onClick={() => { editor.chain().focus().addColumnBefore().run(); setShowTableMenu(false); }}
+                    icon={<Plus className="h-3.5 w-3.5" strokeWidth={1.75} />}
+                    label="Add column left"
+                  />
+                  <TableMenuButton
+                    onClick={() => { editor.chain().focus().addColumnAfter().run(); setShowTableMenu(false); }}
+                    icon={<Plus className="h-3.5 w-3.5" strokeWidth={1.75} />}
+                    label="Add column right"
+                  />
+                  <div className="border-t border-gray-100 my-1" />
+                  <TableMenuButton
+                    onClick={() => { editor.chain().focus().deleteRow().run(); setShowTableMenu(false); }}
+                    icon={<Minus className="h-3.5 w-3.5" strokeWidth={1.75} />}
+                    label="Delete row"
+                  />
+                  <TableMenuButton
+                    onClick={() => { editor.chain().focus().deleteColumn().run(); setShowTableMenu(false); }}
+                    icon={<Minus className="h-3.5 w-3.5" strokeWidth={1.75} />}
+                    label="Delete column"
+                  />
+                  <div className="border-t border-gray-100 my-1" />
+                  <TableMenuButton
+                    onClick={() => { editor.chain().focus().toggleHeaderRow().run(); setShowTableMenu(false); }}
+                    icon={<ToggleLeft className="h-3.5 w-3.5" strokeWidth={1.75} />}
+                    label="Toggle header row"
+                  />
+                  <div className="border-t border-gray-100 my-1" />
+                  <TableMenuButton
+                    onClick={() => { editor.chain().focus().deleteTable().run(); setShowTableMenu(false); }}
+                    icon={<Trash2 className="h-3.5 w-3.5 text-red-500" strokeWidth={1.75} />}
+                    label="Delete table"
+                    className="text-red-600 hover:bg-red-50"
+                  />
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <ToolbarButton
+                onClick={() => setShowTablePicker(!showTablePicker)}
+                title="Insert table"
+              >
+                <Table2 className="h-4 w-4" strokeWidth={1.75} />
+              </ToolbarButton>
+              {showTablePicker && (
+                <TableGridPicker
+                  onInsert={handleInsertTable}
+                  onClose={() => setShowTablePicker(false)}
+                />
+              )}
+            </>
           )}
         </div>
 

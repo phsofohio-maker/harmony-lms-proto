@@ -107,6 +107,7 @@ export const getMatchingUsers = async (
       role: data.role || 'staff',
       department: data.department,
       jobTitle: data.jobTitle,
+      status: data.status,
     };
   });
 
@@ -117,6 +118,11 @@ export const getMatchingUsers = async (
       u.jobTitle && titleSet.has(u.jobTitle.toLowerCase())
     );
   }
+
+  // Exclude deactivated users (Guide 15) — bulk enrollment must not target
+  // people who have left the organization. Documents written before Guide 15
+  // have no `status` field; treat undefined as 'active'.
+  users = users.filter(u => u.status !== 'deactivated');
 
   return users;
 };

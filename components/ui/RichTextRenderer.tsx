@@ -2,6 +2,25 @@ import React, { useEffect, useRef } from 'react';
 import DOMPurify from 'dompurify';
 import { cn } from '../../utils';
 
+// Style sanitization hook — only allows width-related CSS properties
+// so TipTap's column resize data survives sanitization without opening
+// a vector for `background: url(javascript:...)`, `-moz-binding`, etc.
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (node.hasAttribute('style')) {
+    const style = node.getAttribute('style') || '';
+    const safeProperties = style
+      .split(';')
+      .map((s) => s.trim())
+      .filter((s) => /^\s*(min-|max-)?width\s*:/i.test(s))
+      .join('; ');
+    if (safeProperties) {
+      node.setAttribute('style', safeProperties);
+    } else {
+      node.removeAttribute('style');
+    }
+  }
+});
+
 interface RichTextRendererProps {
   content: string;
   className?: string;
@@ -23,10 +42,16 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
     ALLOWED_TAGS: [
       'p', 'br', 'strong', 'em', 'u', 's', 'mark', 'code',
       'h2', 'h3', 'ul', 'ol', 'li', 'a', 'blockquote', 'hr', 'span',
+      'table', 'thead', 'tbody', 'tr', 'th', 'td',
+      'colgroup', 'col',
     ],
     // data-term-id is a read-only foreign-key reference into the glossary
     // collection. It is never written to innerHTML or evaluated as code.
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'data-color', 'class', 'data-term-id', 'data-term'],
+    // `style` is restricted to width-only via the afterSanitizeAttributes hook above.
+    ALLOWED_ATTR: [
+      'href', 'target', 'rel', 'data-color', 'class', 'data-term-id', 'data-term',
+      'colspan', 'rowspan', 'colwidth', 'data-colwidth', 'style',
+    ],
     ADD_ATTR: ['target'],
   });
 

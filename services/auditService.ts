@@ -38,6 +38,7 @@ export type AuditActionType =
   | 'COURSE_CREATE'
   | 'COURSE_UPDATE'
   | 'COURSE_DELETE'
+  | 'COURSE_EXPORT'
   | 'COURSE_PUBLISH'
   | 'MODULE_CREATE'
   | 'MODULE_UPDATE'
@@ -66,8 +67,14 @@ export type AuditActionType =
   | 'IMPORT_REJECTED'
   | 'IMPORT_FAILED'
   | 'IMPORT_PROMOTED'
+  | 'MODULE_PUBLISH_BLOCKED'
+  | 'MODULE_PUBLISH_SUCCESS'
+  | 'MODULE_VALIDATION_ADVISORY_OVERRIDE'
+  | 'MODULE_VALIDATION_RUN'
   | 'ACCOUNT_DIRECT_CREATE'
-  | 'PASSWORD_CHANGE_FORCED';
+  | 'PASSWORD_CHANGE_FORCED'
+  | 'USER_DEACTIVATE'
+  | 'USER_REACTIVATE';
 
 // Internal log structure for Firestore
 interface FirestoreAuditLog {

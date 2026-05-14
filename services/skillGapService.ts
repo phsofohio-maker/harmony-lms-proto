@@ -182,8 +182,16 @@ export const getSkillGapData = async (filters: SkillGapFilters = {}): Promise<Sk
       jobTitle: data.jobTitle,
       licenseNumber: data.licenseNumber,
       licenseExpiry: data.licenseExpiry,
+      status: data.status,
     };
   });
+
+  // Deactivated users (Guide 15) are excluded from active compliance
+  // calculations and their certificates are dropped from the expiry list,
+  // since they no longer work here.
+  const deactivatedUids = new Set(
+    users.filter(u => u.status === 'deactivated').map(u => u.uid)
+  );
 
   const enrollments: Enrollment[] = enrollmentsSnap.docs.map(d => ({
     id: d.id,
@@ -227,7 +235,10 @@ export const getSkillGapData = async (filters: SkillGapFilters = {}): Promise<Sk
   grades.forEach(g => gradesByUserCourse.set(`${g.userId}_${g.courseId}`, g));
 
   // Staff filter: only role === 'staff' or 'instructor' (admins not training-tracked).
-  const staffUsers = users.filter(u => u.role === 'staff' || u.role === 'instructor');
+  // Deactivated users are excluded — they no longer count against compliance rates.
+  const staffUsers = users.filter(u =>
+    (u.role === 'staff' || u.role === 'instructor') && u.status !== 'deactivated'
+  );
   const filteredStaff = filters.department
     ? staffUsers.filter(u => u.department === filters.department)
     : staffUsers;
@@ -347,6 +358,7 @@ export const getSkillGapData = async (filters: SkillGapFilters = {}): Promise<Sk
 
   const expiringFromCert: ExpiringEntry[] = certificates
     .map((cert): ExpiringEntry | null => {
+      if (deactivatedUids.has(cert.userId)) return null;
       const issued = new Date(cert.issuedAt).getTime();
       if (Number.isNaN(issued)) return null;
       const expiresAt = new Date(issued + CERT_VALIDITY_DAYS * 24 * 60 * 60 * 1000).toISOString();
